@@ -137,15 +137,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\Crazy8\Crazy8\Card.cpp" />
-    <ClCompile Include="..\..\Crazy8\Crazy8\Deck.cpp" />
-    <ClCompile Include="..\..\Crazy8\Crazy8\Stack.cpp" />
     <ClCompile Include="Main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\Crazy8\Crazy8\Card.h" />
-    <ClInclude Include="..\..\Crazy8\Crazy8\Deck.h" />
-    <ClInclude Include="..\..\Crazy8\Crazy8\Stack.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
