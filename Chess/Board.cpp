@@ -4,6 +4,11 @@ Board::Board(std::size_t row)
 	: m_boardsize{ row }
 {
 	m_board.resize(row * row);
+	m_black.loadFromFile("chessimages/square_brown_dark_png_shadow_128px.png");
+	m_white.loadFromFile("chessimages/square_brown_light_png_shadow_128px.png");
+
+	m_boxB.setTexture(m_black);
+	m_boxW.setTexture(m_white);
 }
 
 void Board::drawBoard(sf::RenderWindow& window)
@@ -27,9 +32,20 @@ void Board::drawBoard(sf::RenderWindow& window)
 		{
 			current_tile = (row * m_boardsize) + col;
 
-			m_board[current_tile].drawTile(white_turn, origin_x, origin_y);
+			if (white_turn)
+			{
+				m_board[current_tile] = m_boxW;
+				white_turn = false;
+			}
+			else
+			{
+				m_board[current_tile] = m_boxB;
+				white_turn = true;
+			}
 
 			// draw tile on the app
+			m_board[current_tile].setPosition(origin_x, origin_y);
+			m_board[current_tile].scale(0.5f, 0.5f);
 			window.draw(m_board[current_tile]);
 			origin_x += 64;
 		}

@@ -87,7 +87,6 @@ int main()
 
 		game.showPieces(window);
 		
-		
 
 		window.display();
 	}
