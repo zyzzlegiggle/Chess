@@ -33,7 +33,7 @@ private:
 	PieceType m_piece{};
 	sf::Texture m_texture;
 	sf::Sprite m_sprite;
-
+	bool m_movable{ true };
 
 public:
 	ChessPiece() = default;
@@ -51,6 +51,8 @@ public:
 	const std::string_view returnName();
 
 	void moveSprite(int x, int y);
+
+	bool& isMovable();
 
 	virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const;
 };

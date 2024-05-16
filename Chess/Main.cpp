@@ -21,7 +21,7 @@ int main()
 	sf::VideoMode desktop{ sf::VideoMode::getDesktopMode() };
 	*/
 
-	unsigned int screen_width{ 512 };
+	unsigned int screen_width{ 612 };
 	unsigned int screen_height{ 512 };
 
 
@@ -61,7 +61,7 @@ int main()
 					std::cout << "mouse x: " << event.mouseButton.x << std::endl;
 					std::cout << "mouse y: " << event.mouseButton.y << std::endl;
 
-					if (game.returnChosen())
+					if (game.isChosen())
 					{
 						game.movePiece(event.mouseButton.x, event.mouseButton.y);
 					}

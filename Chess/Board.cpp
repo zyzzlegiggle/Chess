@@ -16,6 +16,8 @@ void Board::drawBoard(sf::RenderWindow& window)
 	// put it inside the vector
 	std::size_t current_tile;
 	bool white_turn{ true };
+
+	// set to 32 because origin is in middle of sprite (64/2)
 	float origin_x{};
 	float origin_y{};
 	for (std::size_t row{ 0 }; row < m_boardsize; row++)
@@ -54,6 +56,9 @@ void Board::drawBoard(sf::RenderWindow& window)
 		origin_y += 64;
 		origin_x = 0;
 	}
+}
 
-
+std::vector<sf::Sprite>& Board::returnVector()
+{
+	return m_board;
 }

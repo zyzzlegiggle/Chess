@@ -68,23 +68,40 @@ void GameEvent::showPieces(sf::RenderWindow& window)
 
 void GameEvent::choosePiece(int x, int y)
 {
-	for (ChessPiece& piece : player_owned)
+	if (m_playerturn)
 	{
-		if (piece.returnSprite().getGlobalBounds().contains(x, y))
+		for (ChessPiece& piece : player_owned)
 		{
-			m_chosen = &piece;
-			break;
+			if (piece.returnSprite().getGlobalBounds().contains(x, y))
+			{
+				m_chosen = &piece;
+				break;
+			}
+			else
+			{
+				m_chosen = nullptr;
+			}
 		}
-		else
+	}
+	else
+	{
+		for (ChessPiece& piece : enemy_owned)
 		{
-			m_chosen = nullptr;
+			if (piece.returnSprite().getGlobalBounds().contains(x, y))
+			{
+				m_chosen = &piece;
+				break;
+			}
+			else
+			{
+				m_chosen = nullptr;
+			}
 		}
 	}
 
-
 }
 
-bool GameEvent::returnChosen()
+bool GameEvent::isChosen()
 {
 	if (m_chosen == nullptr)
 	{
@@ -98,7 +115,9 @@ bool GameEvent::returnChosen()
 
 void GameEvent::movePiece(int x, int y)
 {
-	bool point_piece{ false };
+	//bool point_piece{ false };
+	
+	/*
 	for (ChessPiece& piece : player_owned)
 	{
 		if (piece.returnSprite().getGlobalBounds().contains(x, y))
@@ -106,16 +125,133 @@ void GameEvent::movePiece(int x, int y)
 			point_piece = true;
 		}
 	}
+	*/
 
-	if (point_piece == false)
+	// check if piece can be moved (not eaten yet)
+	if (!m_chosen->isMovable())
 	{
-		sf::Vector2i loc{ m_chosen->returnSprite().getPosition() };
-		x -= loc.x;
-		y -= loc.y;
-		m_chosen->returnSprite().move(x, y);
-
+		m_chosen = nullptr;
+		return;
 	}
 
-	m_chosen = nullptr;
+	switch (m_chosen->returnPieceType())
+	{
+	case ChessPiece::PieceType::PAWN:
+		movePawn(x, y);
+	}
+	/*
+	sf::Vector2i loc{ m_chosen->returnSprite().getPosition() };
+	x -= loc.x;
+	y -= loc.y;
+	m_chosen->returnSprite().move(x, y);
+	*/
+	
+	// if player do a wrong move (clicking random tiles) 
+	// stay at player turn
+	if (m_chosen == nullptr)
+	{
+		m_playerturn = m_playerturn;
+	}
+	// else, enemy turn and reset pointer
+	else
+	{
+		m_playerturn = !m_playerturn;
+		m_chosen = nullptr;
+	}
+	
 
+}
+
+void GameEvent::movePawn(int x, int y)
+{
+	bool first_time{};
+	bool eat_enemy{ false };
+	sf::Vector2f loc{ m_chosen->returnSprite().getPosition() };
+
+	// check if pawn is in default position. if so enable double move skill
+	if (m_chosen->returnSprite().getPosition().y == 416 || 
+		m_chosen->returnSprite().getPosition().y == 96)
+	{
+		first_time = true;
+	}
+	else
+	{
+		first_time = false;
+	}
+
+
+	for (sf::Sprite& s : board_vector)
+	{
+		if (s.getGlobalBounds().contains(x, y))
+		{
+			// + 32 because chess origin is in middle of sprite
+			x = s.getPosition().x - loc.x + 32;
+			y = s.getPosition().y - loc.y + 32;
+			break;
+		}
+	}
+
+	// prevent moving back
+
+	if (m_playerturn)
+	{
+		if (y >= 0)
+		{
+			m_chosen = nullptr;
+			return;
+		}
+	}
+	else
+	{
+		if (y <= 0)
+		{
+			m_chosen = nullptr;
+			return;
+		}
+	}
+
+	if (first_time)
+	{
+		if (y < -160)
+		{
+			m_chosen = nullptr;
+			return;
+		}
+	}
+	else
+	{
+		if (y < -96)
+		{
+			m_chosen = nullptr;
+			return;
+		}
+	}
+
+	if ((x == -64 || x == 64) && (y != -160))
+	{
+		eat_enemy = eatEnemy(x, y);
+	}
+	if (!eat_enemy)
+	{
+		m_chosen->returnSprite().move(0, y);
+	}
+	
+	
+}
+
+bool GameEvent::eatEnemy(int x, int y)
+{
+	for (std::size_t i{ 0 }; i < enemy_owned.size(); i++)
+	{
+		if (enemy_owned[i].returnSprite().getGlobalBounds().
+			contains(x + m_chosen->returnSprite().getPosition().x, y + m_chosen->returnSprite().getPosition().y))
+		{
+			enemy_owned[i].returnSprite().setPosition(600, 500);
+			enemy_owned[i].isMovable() = false;
+			m_chosen->returnSprite().move(x, y);
+			return true;
+		}
+	}
+
+	return false;
 }

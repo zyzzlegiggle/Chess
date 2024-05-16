@@ -63,6 +63,7 @@ void ChessPiece::updateSprite(ColorType color, PieceType piece)
 	{
 		m_sprite.setTexture(m_texture);
 		m_sprite.scale(0.5f, 0.5f);
+		m_sprite.setOrigin(m_sprite.getLocalBounds().width / 2, m_sprite.getLocalBounds().height / 2);
 	}
 
 
@@ -96,6 +97,11 @@ const std::string_view ChessPiece::returnName()
 void ChessPiece::moveSprite(int x, int y)
 {
 	m_sprite.move(x, y);
+}
+
+bool& ChessPiece::isMovable()
+{
+	return m_movable;
 }
 
 void ChessPiece::draw(sf::RenderTarget& target, sf::RenderStates states) const

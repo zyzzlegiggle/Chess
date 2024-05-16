@@ -13,4 +13,6 @@ public:
 	Board(std::size_t row);
 
 	void drawBoard(sf::RenderWindow& window);
+
+	std::vector<sf::Sprite>& returnVector();
 };

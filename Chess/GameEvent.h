@@ -11,19 +11,25 @@ private:
 	Board& m_board;
 	Enemy& m_enemy;
 	ChessPiece* m_chosen = nullptr;
+	bool m_playerturn{ true };
 public:
 	GameEvent(Player& player, Board& board, Enemy& enemy);
 
 	bool first_time{ true };
 	std::vector<ChessPiece>& player_owned{ m_player.returnVector() };
 	std::vector<ChessPiece>& enemy_owned{ m_enemy.returnVector() };
+	std::vector<sf::Sprite>& board_vector{ m_board.returnVector() };
 
 	void showPieces(sf::RenderWindow& window);
 
 	void choosePiece(int x, int y);
 
-	bool returnChosen();
+	bool isChosen();
 
 	void movePiece(int x, int y);
+
+	void movePawn(int x, int y);
+
+	bool eatEnemy(int x, int y);
 };
 
