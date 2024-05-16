@@ -229,6 +229,7 @@ void GameEvent::movePawn(int x, int y)
 
 	if ((x == -64 || x == 64) && (y != -160))
 	{
+		// check for enemy
 		eat_enemy = eatEnemy(x, y);
 	}
 	if (!eat_enemy)
