@@ -133,16 +133,37 @@ void GameEvent::movePiece(int x, int y)
 		m_chosen = nullptr;
 		return;
 	}
-	
+
+	std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
 	std::vector<ChessPiece>& rival_owned{ (m_playerturn) ? enemy_owned : player_owned };
+
 	sf::Vector2f loc{ m_chosen->returnSprite().getPosition() };
+
+	// basically find the length from piece to tile
+	for (sf::Sprite& s : board_vector)
+	{
+		if (s.getGlobalBounds().contains(x, y))
+		{
+			// + 32 because chess origin is in middle of sprite
+			// note this
+			x = s.getPosition().x - loc.x + 32;
+			y = s.getPosition().y - loc.y + 32;
+			break;
+		}
+	}
 
 	switch (m_chosen->returnPieceType())
 	{
 	case ChessPiece::PieceType::PAWN:
-		movePawn(x, y, rival_owned, loc);
+		movePawn(x, y, current_owned, rival_owned, loc);
+		break;
 	case ChessPiece::PieceType::KNIGHT:
-		moveKnight(x, y, rival_owned, loc);
+		moveKnight(x, y, current_owned, rival_owned, loc);
+		break;
+	case ChessPiece::PieceType::BISHOP:
+		moveBishop(x, y, current_owned, rival_owned, loc);
+		break;
+
 	}
 	/*
 	sf::Vector2i loc{ m_chosen->returnSprite().getPosition() };
@@ -167,8 +188,8 @@ void GameEvent::movePiece(int x, int y)
 
 }
 
-void GameEvent::movePawn(int x, int y, std::vector<ChessPiece>& rival_owned, 
-						sf::Vector2f& loc)
+void GameEvent::movePawn(int x, int y, std::vector<ChessPiece>& current_owned, 
+							std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc)
 {
 	bool first_time{};
 	bool eat_enemy{ false };
@@ -176,16 +197,6 @@ void GameEvent::movePawn(int x, int y, std::vector<ChessPiece>& rival_owned,
 	// check if pawn is in default position. if so enable double move skill
 	first_time = (loc.y == 416 || loc.y == 96);
 
-	for (sf::Sprite& s : board_vector)
-	{
-		if (s.getGlobalBounds().contains(x, y))
-		{
-			// + 32 because chess origin is in middle of sprite
-			x = s.getPosition().x - loc.x + 32;
-			y = s.getPosition().y - loc.y + 32;
-			break;
-		}
-	}
 
 	// prevent moving back
 	if ((m_playerturn && y >= 0) || (!m_playerturn && y <= 0))
@@ -224,7 +235,7 @@ void GameEvent::movePawn(int x, int y, std::vector<ChessPiece>& rival_owned,
 	{
 		if (x == 0)
 		{
-			if (!pieceBlocked(x, y, rival_owned))
+			if ((!pieceBlocked(x, y, rival_owned)) && (!pieceBlocked(x, y, current_owned)))
 			{
 				m_chosen->returnSprite().move(x, y);
 			}
@@ -273,8 +284,64 @@ bool GameEvent::eatEnemy(int x, int y, std::vector<ChessPiece>& rival_owned)
 	return false;
 }
 
-void GameEvent::moveKnight(int x, int y, std::vector<ChessPiece>& rival_owned,
-	sf::Vector2f& loc)
+void GameEvent::moveKnight(int x, int y, std::vector<ChessPiece>& current_owned,
+							std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc)
 {
+	if ((y == 128 | y == -128) && (x == 64 || x == -64)) // vertical L
+	{
+		if (!pieceBlocked(x, y, current_owned))
+		{
+			if (!eatEnemy(x, y, rival_owned))
+			{
+				m_chosen->returnSprite().move(x, y);
+			}
+		}
+		else
+		{
+			m_chosen = nullptr;
+		}
+	}
+	else if ((y == 64 | y == -64) && (x == 128 || x == -128)) // horizontal L
+	{
+		if (!pieceBlocked(x, y, current_owned))
+		{
+			if (!eatEnemy(x, y, rival_owned))
+			{
+				m_chosen->returnSprite().move(x, y);
+			}
+		}
+		else
+		{
+			m_chosen = nullptr;
+		}
+	}
+	else
+	{
+		m_chosen = nullptr;
+	}
+}
 
+void GameEvent::moveBishop(int x, int y, std::vector<ChessPiece>& current_owned,
+	std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc)
+{
+	for (int i{ 0 }; i <= 512; i += 64)
+	{
+		if ((y == 64 + i || y == -64 + -(i)) && (x == 64 + i || x == -64 + -(i)))
+		{
+			if (!pieceBlocked(x, y, current_owned))
+			{
+				if (!eatEnemy(x, y, rival_owned))
+				{
+					m_chosen->returnSprite().move(x, y);
+					return;
+				}
+				else
+				{
+					return;
+				}
+			}
+		}
+	}
+
+	m_chosen = nullptr;
 }

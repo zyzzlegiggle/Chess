@@ -28,12 +28,17 @@ public:
 
 	void movePiece(int x, int y);
 
-	void movePawn(int x, int y, std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
+	void movePawn(int x, int y, std::vector<ChessPiece>& current_owned, 
+					std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
 	
 	bool pieceBlocked(int x, int y, std::vector<ChessPiece>& rival_owned);
 
 	bool eatEnemy(int x, int y, std::vector<ChessPiece>& rival_owned);
 
-	void moveKnight(int x, int y, std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
+	void moveKnight(int x, int y, std::vector<ChessPiece>& current_owned, 
+					std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
+
+	void moveBishop(int x, int y, std::vector<ChessPiece>& current_owned,
+		std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
 };
 
