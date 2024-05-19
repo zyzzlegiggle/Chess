@@ -152,6 +152,7 @@ void GameEvent::movePiece(int x, int y)
 		}
 	}
 
+	// remember to always return nullptr if wrong move inside particular function
 	switch (m_chosen->returnPieceType())
 	{
 	case ChessPiece::PieceType::PAWN:
@@ -163,7 +164,9 @@ void GameEvent::movePiece(int x, int y)
 	case ChessPiece::PieceType::BISHOP:
 		moveBishop(x, y, current_owned, rival_owned, loc);
 		break;
-
+	case ChessPiece::PieceType::QUEEN:
+		moveQueen(x, y, current_owned, rival_owned, loc);
+		break;
 	}
 	/*
 	sf::Vector2i loc{ m_chosen->returnSprite().getPosition() };
@@ -267,6 +270,32 @@ bool GameEvent::pieceBlocked(int x, int y, std::vector<ChessPiece>& rival_owned)
 	return false;
 }
 
+// use only 64 or -64 for x or y here
+bool GameEvent::onWayBlocked(int target, int x, int y, std::vector<ChessPiece>& current_owned,
+	std::vector<ChessPiece>& rival_owned)
+{
+	std::vector<bool> check_blocked{};
+	int x_adder{ x };
+	int y_adder{ y };
+
+	int i{ (x != 0) ? x : y }; // check if moving through x or y direction (if diagonal, doesnt matter whichs which)
+	
+	int i_adder{ i };
+	while (i != target)
+	{
+		check_blocked.emplace_back(pieceBlocked(x, y, current_owned));
+		check_blocked.emplace_back(pieceBlocked(x, y, current_owned));
+		x += x_adder;
+		y += y_adder;
+		i += i_adder;
+	}
+
+	bool way_blocked = std::any_of(check_blocked.begin(), check_blocked.end(),
+		[](bool v) {return v; });
+
+	return way_blocked;
+}
+
 bool GameEvent::eatEnemy(int x, int y, std::vector<ChessPiece>& rival_owned)
 {
 	for (std::size_t i{ 0 }; i < rival_owned.size(); i++)
@@ -287,7 +316,7 @@ bool GameEvent::eatEnemy(int x, int y, std::vector<ChessPiece>& rival_owned)
 void GameEvent::moveKnight(int x, int y, std::vector<ChessPiece>& current_owned,
 							std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc)
 {
-	if ((y == 128 | y == -128) && (x == 64 || x == -64)) // vertical L
+	if ((y == 128 || y == -128) && (x == 64 || x == -64)) // vertical L
 	{
 		if (!pieceBlocked(x, y, current_owned))
 		{
@@ -301,7 +330,7 @@ void GameEvent::moveKnight(int x, int y, std::vector<ChessPiece>& current_owned,
 			m_chosen = nullptr;
 		}
 	}
-	else if ((y == 64 | y == -64) && (x == 128 || x == -128)) // horizontal L
+	else if ((y == 64 || y == -64) && (x == 128 || x == -128)) // horizontal L
 	{
 		if (!pieceBlocked(x, y, current_owned))
 		{
@@ -324,24 +353,111 @@ void GameEvent::moveKnight(int x, int y, std::vector<ChessPiece>& current_owned,
 void GameEvent::moveBishop(int x, int y, std::vector<ChessPiece>& current_owned,
 	std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc)
 {
+	bool not_blocked{ false };
 	for (int i{ 0 }; i <= 512; i += 64)
 	{
-		if ((y == 64 + i || y == -64 + -(i)) && (x == 64 + i || x == -64 + -(i)))
+		int to_down{ 64 + i };
+		int to_up{ -64 - i };
+		int to_right{ 64 + i };
+		int to_left{ -64 - i };
+
+		// based on where its going, check if blocked and if pointed tile is blocked
+		if (y == to_down)
 		{
-			if (!pieceBlocked(x, y, current_owned))
+			if (x == to_right)
 			{
-				if (!eatEnemy(x, y, rival_owned))
-				{
-					m_chosen->returnSprite().move(x, y);
-					return;
-				}
-				else
-				{
-					return;
-				}
+				not_blocked = !onWayBlocked(x, 64, 64, current_owned);
+					
 			}
+			else if (x == to_left)
+			{
+				not_blocked = !onWayBlocked(x, -64, 64, current_owned);
+			}
+
+			break;
+		}
+		else if (y == to_up)
+		{
+			if (x == to_right)
+			{
+				not_blocked = !onWayBlocked(x, 64, -64, current_owned);
+				
+			}
+			else if (x == to_left)
+			{
+				not_blocked = !onWayBlocked(x, -64, -64, current_owned);
+			}
+
+			break;
 		}
 	}
 
-	m_chosen = nullptr;
+	if (not_blocked)
+	{
+		m_chosen->returnSprite().move(x, y);
+	}
+	else
+	{
+		m_chosen = nullptr;
+	}
+}
+
+
+void GameEvent::moveQueen(int x, int y, std::vector<ChessPiece>& current_owned,
+	std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc)
+{
+	bool not_blocked{ false };
+	for (int i{ 0 }; i <= 512; i += 64)
+	{
+		int to_down{ 64 + i };
+		int to_up{ -64 - i };
+		int to_right{ 64 + i };
+		int to_left{ -64 - i };
+
+		// based on where its going, check if blocked and if pointed tile is blocked
+		if (y == to_down)
+		{
+			if (x == to_right)
+			{
+				not_blocked = !onWayBlocked(x, 64, 64, current_owned);
+
+			}
+			else if (x == to_left)
+			{
+				not_blocked = !onWayBlocked(x, -64, 64, current_owned);
+			}
+			else
+			{
+				not_blocked = !onWayBlocked(y, 0, 64, current_owned);
+			}
+
+			break;
+		}
+		else if (y == to_up)
+		{
+			if (x == to_right)
+			{
+				not_blocked = !onWayBlocked(x, 64, -64, current_owned);
+
+			}
+			else if (x == to_left)
+			{
+				not_blocked = !onWayBlocked(x, -64, -64, current_owned);
+			}
+			else
+			{
+				not_blocked = !onWayBlocked(y, 0, -64, current_owned);
+			}
+			break;
+		}
+	}
+
+	if (not_blocked)
+	{
+		m_chosen->returnSprite().move(x, y);
+	}
+	else
+	{
+		m_chosen = nullptr;
+	}
 }

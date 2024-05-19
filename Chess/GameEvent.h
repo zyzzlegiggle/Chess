@@ -3,7 +3,7 @@
 #include "Board.h"
 #include "Enemy.h"
 #include "ChessPiece.h"
-
+#include <algorithm>
 class GameEvent
 {
 private:
@@ -40,5 +40,11 @@ public:
 
 	void moveBishop(int x, int y, std::vector<ChessPiece>& current_owned,
 		std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
+
+	void moveQueen(int x, int y, std::vector<ChessPiece>& current_owned,
+		std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
+	
+	bool onWayBlocked(int target, int x, int y, std::vector<ChessPiece>& current_owned,
+		std::vector<ChessPiece>& rival_owned);
 };
 
