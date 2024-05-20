@@ -31,7 +31,7 @@ public:
 	void movePawn(int x, int y, std::vector<ChessPiece>& current_owned, 
 					std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
 	
-	bool pieceBlocked(int x, int y, std::vector<ChessPiece>& rival_owned);
+	bool pieceBlocked(int x, int y, std::vector<ChessPiece>& owned);
 
 	bool eatEnemy(int x, int y, std::vector<ChessPiece>& rival_owned);
 
@@ -44,7 +44,13 @@ public:
 	void moveQueen(int x, int y, std::vector<ChessPiece>& current_owned,
 		std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
 	
-	bool onWayBlocked(int target, int x, int y, std::vector<ChessPiece>& current_owned,
-		std::vector<ChessPiece>& rival_owned);
+	bool onWayBlocked(int target_x, int target_y, int dir_x, int dir_y,
+		std::vector<ChessPiece>& current_owned, std::vector<ChessPiece>& rival_owned);
+
+	void moveRook(int x, int y, std::vector<ChessPiece>& current_owned,
+		std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
+
+	void moveKing(int x, int y, std::vector<ChessPiece>& current_owned,
+		std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
 };
 
