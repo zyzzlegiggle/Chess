@@ -52,5 +52,7 @@ public:
 
 	void moveKing(int x, int y, std::vector<ChessPiece>& current_owned,
 		std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
+
+	bool castlingMove(int rook_x, int rook_y, std::vector<ChessPiece>& current_owned, int offsetX);
 };
 
