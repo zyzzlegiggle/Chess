@@ -61,6 +61,8 @@ int main()
 					std::cout << "mouse x: " << event.mouseButton.x << std::endl;
 					std::cout << "mouse y: " << event.mouseButton.y << std::endl;
 
+					game.checkSeeker();
+
 					if (game.isChosen())
 					{
 						game.movePiece(event.mouseButton.x, event.mouseButton.y);
@@ -86,6 +88,7 @@ int main()
 		board.drawBoard(window);
 
 		game.showPieces(window);
+		
 		
 
 		window.display();

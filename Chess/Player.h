@@ -16,5 +16,7 @@ public:
 	ChessPiece& returnPiece(std::size_t i);
 
 	std::vector<ChessPiece>& returnVector();
+
+	
 };
 

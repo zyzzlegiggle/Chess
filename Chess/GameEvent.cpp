@@ -68,11 +68,13 @@ void GameEvent::showPieces(sf::RenderWindow& window)
 
 void GameEvent::choosePiece(int x, int y)
 {
-	if (m_playerturn)
+	std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
+	for (ChessPiece& piece : current_owned)
 	{
-		for (ChessPiece& piece : player_owned)
+		if (check)
 		{
-			if (piece.returnSprite().getGlobalBounds().contains(x, y))
+			if (piece.returnSprite().getGlobalBounds().contains(x, y) &&
+				piece.returnPieceType() == ChessPiece::PieceType::KING)
 			{
 				m_chosen = &piece;
 				break;
@@ -82,23 +84,20 @@ void GameEvent::choosePiece(int x, int y)
 				m_chosen = nullptr;
 			}
 		}
-	}
-	else
-	{
-		for (ChessPiece& piece : enemy_owned)
+		else if (piece.returnSprite().getGlobalBounds().contains(x, y))
 		{
-			if (piece.returnSprite().getGlobalBounds().contains(x, y))
+			if (check)
 			{
-				m_chosen = &piece;
-				break;
-			}
-			else
-			{
-				m_chosen = nullptr;
-			}
-		}
-	}
 
+			}
+			m_chosen = &piece;
+			break;
+		}
+		else
+		{
+			m_chosen = nullptr;
+		}
+	}
 }
 
 bool GameEvent::isChosen()
@@ -127,6 +126,8 @@ void GameEvent::movePiece(int x, int y)
 	}
 	*/
 
+	
+
 	// check if piece can be moved (not eaten yet)
 	if (!m_chosen->isMovable())
 	{
@@ -152,6 +153,19 @@ void GameEvent::movePiece(int x, int y)
 		}
 	}
 
+	/*
+	if (checkSeeker()
+	{
+		if (m_chosen->returnPieceType() == ChessPiece::PieceType::KING)
+		{
+			moveKing(x, y, current_owned, rival_owned, loc);
+		}
+	}
+	else
+	{
+		
+	}
+	*/
 	// remember to always return nullptr if wrong move inside particular function
 	switch (m_chosen->returnPieceType())
 	{
@@ -178,7 +192,7 @@ void GameEvent::movePiece(int x, int y)
 	// if player do a wrong move (clicking random tiles) 
 	// stay at player turn
 	// else, enemy turn and reset pointer
-	if (m_chosen == nullptr)
+	if (!isChosen())
 	{
 		m_playerturn = m_playerturn;
 	}
@@ -238,7 +252,8 @@ void GameEvent::movePawn(int x, int y, std::vector<ChessPiece>& current_owned,
 	{
 		if (x == 0)
 		{
-			if ((!pieceBlocked(x, y, rival_owned)) && (!pieceBlocked(x, y, current_owned)))
+			if ((!pieceBlocked(x, y, rival_owned, rival_owned)) && 
+				(!pieceBlocked(x, y, current_owned, rival_owned)))
 			{
 				m_chosen->returnSprite().move(x, y);
 			}
@@ -256,18 +271,16 @@ void GameEvent::movePawn(int x, int y, std::vector<ChessPiece>& current_owned,
 	
 }
 
-bool GameEvent::pieceBlocked(int x, int y, std::vector<ChessPiece>& owned)
+// rival_owned here is to check for checkmates purposes. if using rival_owned for owned,
+// use rival_owned for rival_owned as well
+bool GameEvent::pieceBlocked(int x, int y, std::vector<ChessPiece>& owned, 
+	std::vector<ChessPiece>& rival_owned)
 {
 	for (std::size_t i{ 0 }; i < owned.size(); i++)
 	{
 		if (owned[i].returnSprite().getGlobalBounds().
 			contains(x + m_chosen->returnSprite().getPosition().x, y + m_chosen->returnSprite().getPosition().y))
 		{
-			if (owned[i].returnPieceType() == ChessPiece::PieceType::KING && 
-				owned == enemy_owned)
-			{
-
-			}
 			return true;
 		}
 	}
@@ -285,15 +298,15 @@ bool GameEvent::onWayBlocked(int target_x, int target_y, int dir_x, int dir_y,
 
 	while (dir_x != target_x || dir_y != target_y)
 	{
-		check_blocked.emplace_back(pieceBlocked(dir_x, dir_y, current_owned));
-		check_blocked.emplace_back(pieceBlocked(dir_x, dir_y, rival_owned));
+		check_blocked.emplace_back(pieceBlocked(dir_x, dir_y, current_owned, rival_owned));
+		check_blocked.emplace_back(pieceBlocked(dir_x, dir_y, rival_owned, rival_owned));
 		dir_x += x_adder;
 		dir_y += y_adder;
 	}
 
 	// in case player pointed to player piece because previous loop stops when dir == target
 	// no need for enemy because will be checked on caller function
-	check_blocked.emplace_back(pieceBlocked(dir_x, dir_y, current_owned)); 
+	check_blocked.emplace_back(pieceBlocked(dir_x, dir_y, current_owned, rival_owned)); 
 	
 	bool way_blocked = std::any_of(check_blocked.begin(), check_blocked.end(),
 		[](bool v) {return v; });
@@ -323,7 +336,7 @@ void GameEvent::moveKnight(int x, int y, std::vector<ChessPiece>& current_owned,
 {
 	if ((y == 128 || y == -128) && (x == 64 || x == -64)) // vertical L
 	{
-		if (!pieceBlocked(x, y, current_owned))
+		if (!pieceBlocked(x, y, current_owned, rival_owned))
 		{
 			if (!eatEnemy(x, y, rival_owned))
 			{
@@ -337,7 +350,7 @@ void GameEvent::moveKnight(int x, int y, std::vector<ChessPiece>& current_owned,
 	}
 	else if ((y == 64 || y == -64) && (x == 128 || x == -128)) // horizontal L
 	{
-		if (!pieceBlocked(x, y, current_owned))
+		if (!pieceBlocked(x, y, current_owned, rival_owned))
 		{
 			if (!eatEnemy(x, y, rival_owned))
 			{
@@ -607,43 +620,42 @@ void GameEvent::moveKing(int x, int y, std::vector<ChessPiece>& current_owned,
 	// based on where its going, check if blocked and if pointed tile is blocked
 	if (y == to_down)
 	{
-		if (x == to_right)
+		if (x == to_right && !checkSeeker(x + loc.x, y + loc.y, rival_owned, current_owned))
 		{
 			not_blocked = !onWayBlocked(x, y, to_right, to_down, current_owned, rival_owned);
-
 		}
-		else if (x == to_left)
+		else if (x == to_left && !checkSeeker(x + loc.x, y + loc.y, rival_owned, current_owned))
 		{
 			not_blocked = !onWayBlocked(x, y, to_left, to_down, current_owned, rival_owned);
 		}
-		else if (x == 0)
+		else if (x == 0 && !checkSeeker(x + loc.x, y + loc.y, rival_owned, current_owned))
 		{
 			not_blocked = !onWayBlocked(x, y, x, to_down, current_owned, rival_owned);
 		}
 	}
 	else if (y == to_up)
 	{
-		if (x == to_right)
+		if (x == to_right && !checkSeeker(x + loc.x, y + loc.y, rival_owned, current_owned))
 		{
 			not_blocked = !onWayBlocked(x, y, to_right, to_up, current_owned, rival_owned);
 
 		}
-		else if (x == to_left)
+		else if (x == to_left && !checkSeeker(x + loc.x, y + loc.y, rival_owned, current_owned))
 		{
 			not_blocked = !onWayBlocked(x, y, to_left, to_up, current_owned, rival_owned);
 		}
-		else if (x == 0)
+		else if (x == 0 && !checkSeeker(x + loc.x, y + loc.y, rival_owned, current_owned))
 		{
 			not_blocked = !onWayBlocked(x, y, x, to_up, current_owned, rival_owned);
 		}
 	}
 	else if (y == 0)
 	{
-		if (x == to_right)
+		if (x == to_right && !checkSeeker(x + loc.x, y + loc.y, rival_owned, current_owned))
 		{
 			not_blocked = !onWayBlocked(x, y, to_right, y, current_owned, rival_owned);
 		}
-		else if (x == to_left)
+		else if (x == to_left && !checkSeeker(x + loc.x, y + loc.y, rival_owned, current_owned))
 		{
 			not_blocked = !onWayBlocked(x, y, to_left, y, current_owned, rival_owned);
 		}
@@ -654,6 +666,7 @@ void GameEvent::moveKing(int x, int y, std::vector<ChessPiece>& current_owned,
 		if (!eatEnemy(x, y, rival_owned))
 		{
 			m_chosen->returnSprite().move(x, y);
+			check = false;
 
 			// if not castling
 			if (white_firsttime)
@@ -686,4 +699,508 @@ bool GameEvent::castlingMove(int rook_x, int rook_y, std::vector<ChessPiece>& cu
 	}
 
 	return false;
+}
+
+void GameEvent::checkSeeker()
+{
+	// for optimization purposes
+	if (!check)
+	{
+		std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
+		std::vector<ChessPiece>& rival_owned{ (m_playerturn) ? enemy_owned : player_owned };
+		ChessPiece* king = nullptr;
+
+		for (ChessPiece& k : current_owned)
+		{
+			if (k.returnPieceType() == ChessPiece::PieceType::KING)
+			{
+				king = &k;
+				break;
+			}
+		}
+
+		sf::Vector2f loc{ king->returnSprite().getPosition() };
+
+		bool up_check{ false }, down_check{ false }, left_check{ false },
+			right_check{ false }, diag_topright{ false }, diag_topleft{ false },
+			diag_botright{ false }, diag_botleft{ false };
+
+		// checks here are executed once if a piece exist
+		// if there is a piece not rook/queen in front of king, front check wont be done again
+		// also check current side as well if blocked
+		for (int i{ 0 }; i <= 512; i += 64)
+		{
+			int to_down{ 64 + i };
+			int to_up{ -64 - i };
+			int to_right{ 64 + i };
+			int to_left{ -64 - i };
+
+			for (std::size_t i{ 0 }; i < rival_owned.size(); i++)
+			{
+				// vertical
+
+				// up
+				if (!up_check)
+				{
+					if (rival_owned[i].returnSprite().getGlobalBounds().contains(0 + loc.x, to_up + loc.y))
+					{
+						if ((rival_owned[i].returnPieceType() == ChessPiece::PieceType::ROOK ||
+							rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN))
+						{
+							check = true;
+							break;
+						}
+						up_check = true;
+					}
+					else if (current_owned[i].returnSprite().getGlobalBounds().contains(0 + loc.x, to_up + loc.y))
+					{
+						up_check = true;
+					}
+				}
+
+
+				// down
+				if (!down_check)
+				{
+					if (rival_owned[i].returnSprite().getGlobalBounds().contains(0 + loc.x, to_down + loc.y))
+					{
+						if ((rival_owned[i].returnPieceType() == ChessPiece::PieceType::ROOK ||
+							rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN))
+						{
+							check = true;
+							break;
+						}
+						down_check = true;
+					}
+					else if (current_owned[i].returnSprite().getGlobalBounds().contains(0 + loc.x, to_down + loc.y))
+					{
+						down_check = true;
+					}
+				}
+
+				// horizontal
+
+				// left
+				if (!left_check)
+				{
+					if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_left + loc.x, 0 + loc.y))
+					{
+						if ((rival_owned[i].returnPieceType() == ChessPiece::PieceType::ROOK ||
+							rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN))
+						{
+							check = true;
+							break;
+						}
+						left_check = true;
+					}
+					else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_left + loc.x, 0 + loc.y))
+					{
+						left_check = true;
+					}
+				}
+
+				// right
+				if (!right_check)
+				{
+					if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_right + loc.x, 0 + loc.y))
+					{
+						if ((rival_owned[i].returnPieceType() == ChessPiece::PieceType::ROOK ||
+							rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN))
+						{
+							check = true;
+							break;
+						}
+						right_check = true;
+					}
+					else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_right + loc.x, 0 + loc.y))
+					{
+						right_check = true;
+					}
+				}
+
+
+				// diagonal
+				// check for enemy pawn first
+
+				// top right
+				if (!diag_topright)
+				{
+
+					if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_right + loc.x, to_up + loc.y))
+					{
+						if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+							rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN)
+						{
+							check = true;
+							break;
+						}
+						diag_topright = true;
+					}
+					else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_right + loc.x, to_up + loc.y))
+					{
+						diag_topright = true;
+					}
+				}
+
+				// top left
+				if (!diag_topleft)
+				{
+					if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_left + loc.x, to_up + loc.y))
+					{
+						if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+							rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN)
+						{
+							check = true;
+							break;
+						}
+						diag_topleft = true;
+					}
+
+					else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_left + loc.x, to_up + loc.y))
+					{
+						diag_topleft = true;
+					}
+				}
+
+
+				// bottom right
+				if (!diag_botright)
+				{
+					if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_right + loc.x, to_down + loc.y))
+					{
+						if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+							rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN)
+						{
+							check = true;
+							break;
+						}
+						diag_botright = true;
+					}
+					else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_right + loc.x, to_down + loc.y))
+					{
+						diag_botright = true;
+					}
+				}
+
+
+				// bottom left
+				if (!diag_botleft)
+				{
+					if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_left + loc.x, to_down + loc.y))
+					{
+						if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+							rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN)
+						{
+							check = true;
+							break;
+						}
+						diag_botleft = true;
+					}
+					else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_left + loc.x, to_down + loc.y))
+					{
+						diag_botleft = true;
+					}
+				}
+			}
+
+			if (check)
+			{
+				break;
+			}
+		}
+
+		// for pawn and knight
+		for (ChessPiece& p : rival_owned)
+		{
+			// player side pawn check
+			if (m_playerturn)
+			{
+				// top right and left
+				if ((p.returnSprite().getGlobalBounds().contains(64 + loc.x, -64 + loc.y) &&
+					p.returnPieceType() == ChessPiece::PieceType::PAWN) ||
+					(p.returnSprite().getGlobalBounds().contains(-64 + loc.x, -64 + loc.y) &&
+						p.returnPieceType() == ChessPiece::PieceType::PAWN))
+				{
+					check = true;
+				}
+			}
+			// enemy side pawn check
+			else
+			{
+				// bottom right and left
+				if ((p.returnSprite().getGlobalBounds().contains(64 + loc.x, 64 + loc.y) &&
+					p.returnPieceType() == ChessPiece::PieceType::PAWN) ||
+					(p.returnSprite().getGlobalBounds().contains(-64 + loc.x, 64 + loc.y) &&
+						p.returnPieceType() == ChessPiece::PieceType::PAWN))
+				{
+					check = true;
+				}
+			}
+
+			// knight
+
+			// horizontal L
+			if ((p.returnSprite().getGlobalBounds().contains(64 + loc.x, 128 + loc.y) ||
+				p.returnSprite().getGlobalBounds().contains(-64 + loc.x, 128 + loc.y) ||
+				p.returnSprite().getGlobalBounds().contains(64 + loc.x, -128 + loc.y) ||
+				p.returnSprite().getGlobalBounds().contains(-64 + loc.x, -128 + loc.y)) &&
+				p.returnPieceType() == ChessPiece::PieceType::KNIGHT)
+			{
+				check = true;
+			}
+
+			// vertical L
+			else if ((p.returnSprite().getGlobalBounds().contains(128 + loc.x, 64 + loc.y) ||
+				p.returnSprite().getGlobalBounds().contains(-128 + loc.x, 64 + loc.y) ||
+				p.returnSprite().getGlobalBounds().contains(128 + loc.x, -64 + loc.y) ||
+				p.returnSprite().getGlobalBounds().contains(-128 + loc.x, -64 + loc.y)) &&
+				p.returnPieceType() == ChessPiece::PieceType::KNIGHT)
+			{
+				check = true;
+			}
+		}
+	}
+}
+
+bool GameEvent::checkSeeker(int x, int y, std::vector<ChessPiece>& rival_owned, 
+	std::vector<ChessPiece>& current_owned)
+{
+	bool up_check{ false }, down_check{ false }, left_check{ false },
+		right_check{ false }, diag_topright{ false }, diag_topleft{ false },
+		diag_botright{ false }, diag_botleft{ false };
+
+	// checks here are executed once if a piece exist
+	// if there is a piece not rook/queen in front of king, front check wont be done again
+	// also check current side as well if blocked
+	for (int i{ 0 }; i <= 512; i += 64)
+	{
+		int to_down{ 64 + i };
+		int to_up{ -64 - i };
+		int to_right{ 64 + i };
+		int to_left{ -64 - i };
+
+		for (std::size_t i{ 0 }; i < rival_owned.size(); i++)
+		{
+			// vertical
+
+			// up
+			if (!up_check)
+			{
+				if (rival_owned[i].returnSprite().getGlobalBounds().contains(0 + x, to_up + y))
+				{
+					if ((rival_owned[i].returnPieceType() == ChessPiece::PieceType::ROOK ||
+						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN))
+					{
+						return true;
+
+					}
+					up_check = true;
+				}
+				else if (current_owned[i].returnSprite().getGlobalBounds().contains(0 + x, to_up + y))
+				{
+					up_check = true;
+				}
+			}
+
+
+			// down
+			if (!down_check)
+			{
+				if (rival_owned[i].returnSprite().getGlobalBounds().contains(0 + x, to_down + y))
+				{
+					if ((rival_owned[i].returnPieceType() == ChessPiece::PieceType::ROOK ||
+						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN))
+					{
+						return true;
+						
+					}
+					down_check = true;
+				}
+				else if (current_owned[i].returnSprite().getGlobalBounds().contains(0 + x, to_down + y))
+				{
+					down_check = true;
+				}
+			}
+
+			// horizontal
+
+			// left
+			if (!left_check)
+			{
+				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_left + x, 0 + y))
+				{
+					if ((rival_owned[i].returnPieceType() == ChessPiece::PieceType::ROOK ||
+						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN))
+					{
+						return true;
+						
+					}
+					left_check = true;
+				}
+				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_left + x, 0 + y))
+				{
+					left_check = true;
+				}
+			}
+
+			// right
+			if (!right_check)
+			{
+				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_right + x, 0 + y))
+				{
+					if ((rival_owned[i].returnPieceType() == ChessPiece::PieceType::ROOK ||
+						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN))
+					{
+						return true;
+						
+					}
+					right_check = true;
+				}
+				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_right + x, 0 + y))
+				{
+					right_check = true;
+				}
+			}
+
+
+			// diagonal
+			// check for enemy pawn first
+
+			// top right
+			if (!diag_topright)
+			{
+
+				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_right + x, to_up + y))
+				{
+					if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					{
+						return true;
+						
+					}
+					diag_topright = true;
+				}
+				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_right + x, to_up + y))
+				{
+					diag_topright = true;
+				}
+			}
+
+			// top left
+			if (!diag_topleft)
+			{
+				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_left + x, to_up + y))
+				{
+					if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					{
+						return true;
+						
+					}
+					diag_topleft = true;
+				}
+
+				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_left + x, to_up + y))
+				{
+					diag_topleft = true;
+				}
+			}
+
+
+			// bottom right
+			if (!diag_botright)
+			{
+				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_right + x, to_down + y))
+				{
+					if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					{
+						return true;
+						
+					}
+					diag_botright = true;
+				}
+				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_right + x, to_down + y))
+				{
+					diag_botright = true;
+				}
+			}
+
+
+			// bottom left
+			if (!diag_botleft)
+			{
+				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_left + x, to_down + y))
+				{
+					if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					{
+						return true;
+						
+					}
+					diag_botleft = true;
+				}
+				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_left + x, to_down + y))
+				{
+					diag_botleft = true;
+				}
+			}
+		}
+
+		if (check)
+		{
+			
+		}
+	}
+
+	// for pawn and knight
+	for (ChessPiece& p : rival_owned)
+	{
+		// player side pawn check
+		if (m_playerturn)
+		{
+			// top right and left
+			if ((p.returnSprite().getGlobalBounds().contains(64 + x, -64 + y) &&
+				p.returnPieceType() == ChessPiece::PieceType::PAWN) ||
+				(p.returnSprite().getGlobalBounds().contains(-64 + x, -64 + y) &&
+					p.returnPieceType() == ChessPiece::PieceType::PAWN))
+			{
+				return true;
+			}
+		}
+		// enemy side pawn check
+		else
+		{
+			// bottom right and left
+			if ((p.returnSprite().getGlobalBounds().contains(64 + x, 64 + y) &&
+				p.returnPieceType() == ChessPiece::PieceType::PAWN) ||
+				(p.returnSprite().getGlobalBounds().contains(-64 + x, 64 + y) &&
+					p.returnPieceType() == ChessPiece::PieceType::PAWN))
+			{
+				return true;
+			}
+		}
+
+		// knight
+
+		// horizontal L
+		if ((p.returnSprite().getGlobalBounds().contains(64 + x, 128 + y) ||
+			p.returnSprite().getGlobalBounds().contains(-64 + x, 128 + y) ||
+			p.returnSprite().getGlobalBounds().contains(64 + x, -128 + y) ||
+			p.returnSprite().getGlobalBounds().contains(-64 + x, -128 + y)) &&
+			p.returnPieceType() == ChessPiece::PieceType::KNIGHT)
+		{
+			return true;
+		}
+
+		// vertical L
+		else if ((p.returnSprite().getGlobalBounds().contains(128 + x, 64 + y) ||
+			p.returnSprite().getGlobalBounds().contains(-128 + x, 64 + y) ||
+			p.returnSprite().getGlobalBounds().contains(128 + x, -64 + y) ||
+			p.returnSprite().getGlobalBounds().contains(-128 + x, -64 + y)) &&
+			p.returnPieceType() == ChessPiece::PieceType::KNIGHT)
+		{
+			return true;
+		}
+	}
 }

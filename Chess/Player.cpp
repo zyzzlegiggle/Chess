@@ -56,3 +56,4 @@ std::vector<ChessPiece>& Player::returnVector()
 {
 	return m_pieces;
 }
+

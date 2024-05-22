@@ -4,6 +4,8 @@
 #include "Enemy.h"
 #include "ChessPiece.h"
 #include <algorithm>
+#include <memory>
+
 class GameEvent
 {
 private:
@@ -19,6 +21,7 @@ public:
 	std::vector<ChessPiece>& player_owned{ m_player.returnVector() };
 	std::vector<ChessPiece>& enemy_owned{ m_enemy.returnVector() };
 	std::vector<sf::Sprite>& board_vector{ m_board.returnVector() };
+	static inline bool check{ false };
 
 	void showPieces(sf::RenderWindow& window);
 
@@ -31,12 +34,13 @@ public:
 	void movePawn(int x, int y, std::vector<ChessPiece>& current_owned, 
 					std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
 	
-	bool pieceBlocked(int x, int y, std::vector<ChessPiece>& owned);
+	bool pieceBlocked(int x, int y, std::vector<ChessPiece>& owned, 
+		std::vector<ChessPiece>& rival_owned);
 
 	bool eatEnemy(int x, int y, std::vector<ChessPiece>& rival_owned);
 
 	void moveKnight(int x, int y, std::vector<ChessPiece>& current_owned, 
-					std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
+		std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
 
 	void moveBishop(int x, int y, std::vector<ChessPiece>& current_owned,
 		std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
@@ -53,6 +57,12 @@ public:
 	void moveKing(int x, int y, std::vector<ChessPiece>& current_owned,
 		std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
 
-	bool castlingMove(int rook_x, int rook_y, std::vector<ChessPiece>& current_owned, int offsetX);
+	bool castlingMove(int rook_x, int rook_y, 
+		std::vector<ChessPiece>& current_owned, int offsetX);
+
+	void checkSeeker();
+
+	bool checkSeeker(int x, int y, std::vector<ChessPiece>& rival_owned,
+		std::vector<ChessPiece>& current_owned);
 };
 
