@@ -71,6 +71,7 @@ void GameEvent::choosePiece(int x, int y)
 	std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
 	for (ChessPiece& piece : current_owned)
 	{
+		/*
 		if (check)
 		{
 			if (piece.returnSprite().getGlobalBounds().contains(x, y) &&
@@ -84,12 +85,9 @@ void GameEvent::choosePiece(int x, int y)
 				m_chosen = nullptr;
 			}
 		}
-		else if (piece.returnSprite().getGlobalBounds().contains(x, y))
+		*/
+		if (piece.returnSprite().getGlobalBounds().contains(x, y))
 		{
-			if (check)
-			{
-
-			}
 			m_chosen = &piece;
 			break;
 		}
@@ -252,8 +250,14 @@ void GameEvent::movePawn(int x, int y, std::vector<ChessPiece>& current_owned,
 	{
 		if (x == 0)
 		{
-			if ((!pieceBlocked(x, y, rival_owned, rival_owned)) && 
-				(!pieceBlocked(x, y, current_owned, rival_owned)))
+			if ((!pieceBlocked(0, -64, current_owned, rival_owned) &&
+				!pieceBlocked(0, -128, current_owned, rival_owned) &&
+				!pieceBlocked(0, -64, rival_owned, rival_owned) &&
+				!pieceBlocked(0, -128, rival_owned, rival_owned)) ||
+				(!pieceBlocked(0, 64, current_owned, rival_owned) &&
+					!pieceBlocked(0, 128, current_owned, rival_owned) &&
+					!pieceBlocked(0, 64, rival_owned, rival_owned) &&
+					!pieceBlocked(0, 128, rival_owned, rival_owned)))// yee yee ahh function
 			{
 				m_chosen->returnSprite().move(x, y);
 			}
@@ -261,6 +265,7 @@ void GameEvent::movePawn(int x, int y, std::vector<ChessPiece>& current_owned,
 			{
 				m_chosen = nullptr;
 			}
+			
 		}
 		else
 		{
@@ -273,6 +278,7 @@ void GameEvent::movePawn(int x, int y, std::vector<ChessPiece>& current_owned,
 
 // rival_owned here is to check for checkmates purposes. if using rival_owned for owned,
 // use rival_owned for rival_owned as well
+// use this to check if the block is one tile in front (usually for pawn)
 bool GameEvent::pieceBlocked(int x, int y, std::vector<ChessPiece>& owned, 
 	std::vector<ChessPiece>& rival_owned)
 {
@@ -305,7 +311,7 @@ bool GameEvent::onWayBlocked(int target_x, int target_y, int dir_x, int dir_y,
 	}
 
 	// in case player pointed to player piece because previous loop stops when dir == target
-	// no need for enemy because will be checked on caller function
+	// no need for enemy because will be checked on caller function (by eating?)
 	check_blocked.emplace_back(pieceBlocked(dir_x, dir_y, current_owned, rival_owned)); 
 	
 	bool way_blocked = std::any_of(check_blocked.begin(), check_blocked.end(),
@@ -563,59 +569,77 @@ void GameEvent::moveKing(int x, int y, std::vector<ChessPiece>& current_owned,
 	int to_left{ -64 };
 
 	// castling check (white will always go first)
-	static bool white_firsttime{ true };
-	static bool black_firsttime{ true };
-	if (white_firsttime)
+	
+	if (m_playerturn)
 	{
-		if (y == 0)
+		static bool white_firsttime{ true };
+		if (loc.x != 352 && loc.y != 480)
 		{
-			if ((x == to_right + 64 && !onWayBlocked(x, y, to_right, y, current_owned, rival_owned)))
+			white_firsttime = false;
+		}
+
+		if (white_firsttime)
+		{
+			if (y == 0)
 			{
-				if (castlingMove(loc.x + x + 64, loc.y, current_owned, -128))
+				if ((x == to_right + 64 && !onWayBlocked(x, y, to_right, y, current_owned, rival_owned)))
 				{
-					m_chosen->returnSprite().move(x, y);
-					white_firsttime = false;
-					return;
+					if (castlingMove(loc.x + x + 64, loc.y, current_owned, -128))
+					{
+						m_chosen->returnSprite().move(x, y);
+						white_firsttime = false;
+						return;
+					}
+
 				}
-				
-			}
-			else if (x == to_left - 64 && !onWayBlocked(x, y, to_left, y, current_owned, rival_owned))
-			{
-				if (castlingMove(32, loc.y, current_owned, 192))
+				else if (x == to_left - 64 && !onWayBlocked(x, y, to_left, y, current_owned, rival_owned))
 				{
-					m_chosen->returnSprite().move(x, y);
-					white_firsttime = false;
-					return;
+					if (castlingMove(32, loc.y, current_owned, 192))
+					{
+						m_chosen->returnSprite().move(x, y);
+						white_firsttime = false;
+						return;
+					}
 				}
 			}
 		}
 	}
-	else if (black_firsttime)
+	
+	else 
 	{
-		if (y == 0)
+		static bool black_firsttime{ true };
+		if (loc.x != 352 && loc.y != 32)
 		{
-			if ((x == to_right + 64 && !onWayBlocked(x, y, to_right, y, current_owned, rival_owned)))
-			{
-				if (castlingMove(loc.x + x + 64, loc.y, current_owned, -128))
-				{
-					m_chosen->returnSprite().move(x, y);
-					black_firsttime = false;
-					return;
-				}
+			black_firsttime = false;
+		}
+		if (black_firsttime)
+		{
 
-			}
-			else if (x == to_left - 64 && !onWayBlocked(x, y, to_left, y, current_owned, rival_owned))
+			if (y == 0)
 			{
-				if (castlingMove(32, loc.y, current_owned, 192))
+				if ((x == to_right + 64 && !onWayBlocked(x, y, to_right, y, current_owned, rival_owned)))
 				{
-					m_chosen->returnSprite().move(x, y);
-					black_firsttime = false;
-					return;
+					if (castlingMove(loc.x + x + 64, loc.y, current_owned, -128))
+					{
+						m_chosen->returnSprite().move(x, y);
+						black_firsttime = false;
+						return;
+					}
+
+				}
+				else if (x == to_left - 64 && !onWayBlocked(x, y, to_left, y, current_owned, rival_owned))
+				{
+					if (castlingMove(32, loc.y, current_owned, 192))
+					{
+						m_chosen->returnSprite().move(x, y);
+						black_firsttime = false;
+						return;
+					}
 				}
 			}
 		}
+		
 	}
-
 
 	// based on where its going, check if blocked and if pointed tile is blocked
 	if (y == to_down)
@@ -666,17 +690,8 @@ void GameEvent::moveKing(int x, int y, std::vector<ChessPiece>& current_owned,
 		if (!eatEnemy(x, y, rival_owned))
 		{
 			m_chosen->returnSprite().move(x, y);
+			// since move is allowed, means escaped from check
 			check = false;
-
-			// if not castling
-			if (white_firsttime)
-			{
-				white_firsttime = false;
-			}
-			else if (black_firsttime)
-			{
-				black_firsttime = false;
-			}
 		}
 	}
 	else
@@ -701,6 +716,7 @@ bool GameEvent::castlingMove(int rook_x, int rook_y, std::vector<ChessPiece>& cu
 	return false;
 }
 
+// function to check for king every turn
 void GameEvent::checkSeeker()
 {
 	// for optimization purposes
@@ -962,6 +978,7 @@ void GameEvent::checkSeeker()
 	}
 }
 
+// function to check any potential threats if move to x, y position (useful for king, and other piece that want to help blocking)
 bool GameEvent::checkSeeker(int x, int y, std::vector<ChessPiece>& rival_owned, 
 	std::vector<ChessPiece>& current_owned)
 {
@@ -1146,11 +1163,6 @@ bool GameEvent::checkSeeker(int x, int y, std::vector<ChessPiece>& rival_owned,
 				}
 			}
 		}
-
-		if (check)
-		{
-			
-		}
 	}
 
 	// for pawn and knight
@@ -1203,4 +1215,6 @@ bool GameEvent::checkSeeker(int x, int y, std::vector<ChessPiece>& rival_owned,
 			return true;
 		}
 	}
+
+	return false;
 }
