@@ -22,6 +22,7 @@ public:
 	std::vector<ChessPiece>& enemy_owned{ m_enemy.returnVector() };
 	std::vector<sf::Sprite>& board_vector{ m_board.returnVector() };
 	static inline bool check{ false };
+	static inline sf::Vector2f up, down, left, right, topright, topleft, botright, botleft;
 
 	void showPieces(sf::RenderWindow& window);
 
@@ -34,7 +35,9 @@ public:
 	void movePawn(int x, int y, std::vector<ChessPiece>& current_owned, 
 					std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc);
 	
-	bool pieceBlocked(int x, int y, std::vector<ChessPiece>& owned, 
+	bool pieceBlocked(int x, int y, std::vector<ChessPiece>& current_owned);
+
+	bool pieceBlocked(int x, int y, std::vector<ChessPiece>& current_owned,
 		std::vector<ChessPiece>& rival_owned);
 
 	bool eatEnemy(int x, int y, std::vector<ChessPiece>& rival_owned);
@@ -60,9 +63,10 @@ public:
 	bool castlingMove(int rook_x, int rook_y, 
 		std::vector<ChessPiece>& current_owned, int offsetX);
 
-	void checkSeeker();
+	bool checkSeeker();
 
-	bool checkSeeker(int x, int y, std::vector<ChessPiece>& rival_owned,
-		std::vector<ChessPiece>& current_owned);
+	bool checkSeeker(int x, int y);
+
+	bool helperKing(int x, int y, );
 };
 
