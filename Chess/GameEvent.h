@@ -71,5 +71,7 @@ public:
 
 	void movingAction(int x, int y, bool not_blocked, std::vector<ChessPiece>& rival_owned,
 		bool eat_enemy = false);
+
+	void promotionCheck(sf::Vector2f& loc);
 };
 

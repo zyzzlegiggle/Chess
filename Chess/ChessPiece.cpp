@@ -104,6 +104,12 @@ bool& ChessPiece::isMovable()
 	return m_movable;
 }
 
+void ChessPiece::resetSprite()
+{
+	m_sprite.setScale(0.5f, 0.5f);
+	m_sprite.setOrigin(m_sprite.getLocalBounds().width / 2, m_sprite.getLocalBounds().height / 2);
+}
+
 void ChessPiece::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
 	if (m_sprite.getTexture() == nullptr)
@@ -113,3 +119,4 @@ void ChessPiece::draw(sf::RenderTarget& target, sf::RenderStates states) const
 	target.draw(m_sprite, states);
 
 }
+

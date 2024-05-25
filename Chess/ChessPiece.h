@@ -54,5 +54,7 @@ public:
 
 	bool& isMovable();
 
+	void resetSprite();
+
 	virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const;
 };

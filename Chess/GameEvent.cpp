@@ -247,6 +247,8 @@ void GameEvent::movePawn(int x, int y, std::vector<ChessPiece>& current_owned,
 	}
 
 	movingAction(x, y, not_blocked, rival_owned, eat_enemy);
+	promotionCheck(loc); // if reached end of board, promote
+	
 }
 
 void GameEvent::moveKnight(int x, int y, std::vector<ChessPiece>& current_owned,
@@ -433,7 +435,7 @@ void GameEvent::moveKing(int x, int y, std::vector<ChessPiece>& current_owned,
 	if (m_playerturn)
 	{
 		
-		if (loc.x != 352 && loc.y != 480)
+		if (loc.x != 288 || loc.y != 480)
 		{
 			white_firsttime = false;
 		}
@@ -469,7 +471,7 @@ void GameEvent::moveKing(int x, int y, std::vector<ChessPiece>& current_owned,
 	}
 	else
 	{
-		if (loc.x != 352 && loc.y != 32)
+		if (loc.x != 288 || loc.y != 32)
 		{
 			black_firsttime = false;
 		}
@@ -1388,4 +1390,20 @@ void GameEvent::movingAction(int x, int y, bool not_blocked, std::vector<ChessPi
 		m_chosen = nullptr;
 	}
 	
+}
+
+void GameEvent::promotionCheck(sf::Vector2f& loc)
+{
+	if (m_playerturn && loc.y == 96)
+	{
+		m_chosen->updateSprite(ChessPiece::ColorType::WHITE, ChessPiece::PieceType::QUEEN);
+		// because updateSprite scales the image even smaller, manually rescale back
+		m_chosen->resetSprite();
+	}
+	else if (!m_playerturn && loc.y == 416)
+	{
+		m_chosen->updateSprite(ChessPiece::ColorType::BLACK, ChessPiece::PieceType::QUEEN);
+		// because updateSprite scales the image even smaller, manually rescale back
+		m_chosen->resetSprite();
+	}
 }
