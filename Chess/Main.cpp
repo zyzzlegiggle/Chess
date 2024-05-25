@@ -61,10 +61,9 @@ int main()
 					std::cout << "mouse x: " << event.mouseButton.x << std::endl;
 					std::cout << "mouse y: " << event.mouseButton.y << std::endl;
 
-					game.checkSeeker();
-
 					if (game.isChosen())
 					{
+						game.checkSeeker();
 						game.movePiece(event.mouseButton.x, event.mouseButton.y);
 					}
 					else
