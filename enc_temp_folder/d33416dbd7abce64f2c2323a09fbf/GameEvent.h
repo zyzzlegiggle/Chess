@@ -17,7 +17,7 @@ private:
 	sf::RenderWindow& m_window;
 	bool m_promotion{ false };
 	bool m_check{ false };
-	bool m_firsttime{ true }; // for showing the board the first time
+	bool m_firsttime{ true };
 	std::vector<ChessPiece> m_choices; // choices for pawn promotion
 public:
 	GameEvent(Player& player, Board& board, Enemy& enemy, sf::RenderWindow& window);

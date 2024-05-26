@@ -30,7 +30,7 @@ int main()
 	Board board{ static_cast<std::size_t>(8) };
 	Player player{ true };
 	Enemy enemy{ false };
-	GameEvent game{ player, board, enemy };
+	GameEvent game{ player, board, enemy, window};
 
 	// run program as long window is open
 	
@@ -61,7 +61,11 @@ int main()
 					std::cout << "mouse x: " << event.mouseButton.x << std::endl;
 					std::cout << "mouse y: " << event.mouseButton.y << std::endl;
 
-					if (game.isChosen())
+					if (game.pawnPromotion())
+					{
+						game.choosePromotion(event.mouseButton.x, event.mouseButton.y);
+					}
+					else if (game.isChosen())
 					{
 						game.checkSeeker();
 						game.movePiece(event.mouseButton.x, event.mouseButton.y);
@@ -86,9 +90,12 @@ int main()
 
 		board.drawBoard(window);
 
-		game.showPieces(window);
+		game.showPieces();
 		
-		
+		if (game.pawnPromotion())
+		{
+ 			game.promotionCheck();
+		}
 
 		window.display();
 	}

@@ -8,7 +8,6 @@ GameEvent::GameEvent(Player& player, Board& board, Enemy& enemy, sf::RenderWindo
 {
 }
 
-// show the pieces on window
 void GameEvent::showPieces()
 {
 	std::size_t index{};
@@ -706,7 +705,6 @@ void GameEvent::checkSeeker()
 						m_check = true;
 						up.x = 0 + loc.x;
 						up.y = to_up + i + loc.y; // reset to_up
-						break;
 					}
 					up_check = true;
 				}
@@ -728,7 +726,6 @@ void GameEvent::checkSeeker()
 						m_check = true;
 						down.x = 0 + loc.x;
 						down.y = to_down - i + loc.y; // reset to_down
-						break;
 					}
 					down_check = true;
 				}
@@ -751,7 +748,6 @@ void GameEvent::checkSeeker()
 						m_check = true;
 						left.x = to_left + i + loc.x; //reset to_left
 						left.y = 0 + loc.y;
-						break;
 					}
 					left_check = true;
 				}
@@ -772,7 +768,6 @@ void GameEvent::checkSeeker()
 						m_check = true;
 						right.x = to_right - i + loc.x; // reset to_right
 						right.y = 0 + loc.y;
-						break;
 					}
 					right_check = true;
 				}
@@ -797,7 +792,6 @@ void GameEvent::checkSeeker()
 						m_check = true;
 						topright.x = to_right - i + loc.x;
 						topright.y = to_up + i + loc.y;
-						break;
 					}
 					diag_topright = true;
 				}
@@ -818,7 +812,6 @@ void GameEvent::checkSeeker()
 						m_check = true;
 						topleft.x = to_left + i + loc.x;
 						topleft.y = to_up + i + loc.y;
-						break;
 					}
 					diag_topleft = true;
 				}
@@ -841,7 +834,6 @@ void GameEvent::checkSeeker()
 						m_check = true;
 						botright.x = to_right - i + loc.x;
 						botright.y = to_down - i + loc.y;
-						break;
 					}
 					diag_botright = true;
 				}
@@ -863,7 +855,6 @@ void GameEvent::checkSeeker()
 						m_check = true;
 						botleft.x = to_left + i + loc.x;
 						botleft.y = to_down - i + loc.y;
-						break;
 					}
 					diag_botleft = true;
 				}
@@ -876,7 +867,7 @@ void GameEvent::checkSeeker()
 			// knight check
 			if (!horizontal_L)
 			{
-				if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::KNIGHT &&
+				if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::KNIGHT&&
 					(rival_owned[i].returnSprite().getGlobalBounds().contains(64 + loc.x, 128 + loc.y) ||
 					rival_owned[i].returnSprite().getGlobalBounds().contains(-64 + loc.x, 128 + loc.y) ||
 					rival_owned[i].returnSprite().getGlobalBounds().contains(64 + loc.x, -128 + loc.y) ||
@@ -933,6 +924,64 @@ void GameEvent::checkSeeker()
 			}
 		}
 	}
+
+	// for pawn and knight
+	/*
+	for (ChessPiece& p : rival_owned)
+	{
+		// player side pawn check
+		if (m_playerturn)
+		{
+			// top right and left
+			if (p.returnSprite().getGlobalBounds().contains(64 + loc.x, -64 + loc.y) ||
+				p.returnSprite().getGlobalBounds().contains(-64 + loc.x, -64 + loc.y))
+			{
+				if (p.returnPieceType() == ChessPiece::PieceType::PAWN)
+				{
+					m_check = true;
+					return check;
+				}
+			}
+		}
+		// enemy side pawn check
+		else
+		{
+			// bottom right and left
+			if ((p.returnSprite().getGlobalBounds().contains(64 + loc.x, 64 + loc.y) &&
+				p.returnPieceType() == ChessPiece::PieceType::PAWN) ||
+				(p.returnSprite().getGlobalBounds().contains(-64 + loc.x, 64 + loc.y) &&
+					p.returnPieceType() == ChessPiece::PieceType::PAWN))
+			{
+				m_check = true;
+				return check;
+			}
+		}
+
+		// knight
+
+		// horizontal L
+		if ((p.returnSprite().getGlobalBounds().contains(64 + loc.x, 128 + loc.y) ||
+			p.returnSprite().getGlobalBounds().contains(-64 + loc.x, 128 + loc.y) ||
+			p.returnSprite().getGlobalBounds().contains(64 + loc.x, -128 + loc.y) ||
+			p.returnSprite().getGlobalBounds().contains(-64 + loc.x, -128 + loc.y)) &&
+			p.returnPieceType() == ChessPiece::PieceType::KNIGHT)
+		{
+			m_check = true;
+			return check;
+		}
+
+		// vertical L
+		else if ((p.returnSprite().getGlobalBounds().contains(128 + loc.x, 64 + loc.y) ||
+			p.returnSprite().getGlobalBounds().contains(-128 + loc.x, 64 + loc.y) ||
+			p.returnSprite().getGlobalBounds().contains(128 + loc.x, -64 + loc.y) ||
+			p.returnSprite().getGlobalBounds().contains(-128 + loc.x, -64 + loc.y)) &&
+			p.returnPieceType() == ChessPiece::PieceType::KNIGHT)
+		{
+			m_check = true;
+			return check;
+		}
+	}
+	*/
 }
 
 // function to check any potential threats if move to x, y position
