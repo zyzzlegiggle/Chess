@@ -656,24 +656,15 @@ bool GameEvent::castlingMove(int rook_x, int rook_y, std::vector<ChessPiece>& cu
 	return false;
 }
 
-// function to check for king every turn
+// function to check current king condition every turn
 void GameEvent::checkSeeker()
 {
 	m_check = false;
+
 	std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
 	std::vector<ChessPiece>& rival_owned{ (m_playerturn) ? enemy_owned : player_owned };
-	ChessPiece* king = nullptr;
 
-	for (ChessPiece& k : current_owned)
-	{
-		if (k.returnPieceType() == ChessPiece::PieceType::KING)
-		{
-			king = &k;
-			break;
-		}
-	}
-
-	sf::Vector2f loc{ king->returnSprite().getPosition() };
+	sf::Vector2f loc{ findKingLoc() };
 
 	// set this bools to true if checked that there is a piece or not
 	bool up_check{ false }, down_check{ false }, left_check{ false },
@@ -691,17 +682,17 @@ void GameEvent::checkSeeker()
 		int to_right{ 64 + i };
 		int to_left{ -64 - i };
 
-		for (std::size_t i{ 0 }; i < rival_owned.size(); i++)
+		for (std::size_t j{ 0 }; j < rival_owned.size(); j++)
 		{
 			// vertical
 
 			// up for queen and rook check
 			if (!up_check)
 			{
-				if (rival_owned[i].returnSprite().getGlobalBounds().contains(0 + loc.x, to_up + loc.y))
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(0 + loc.x, to_up + loc.y))
 				{
-					if ((rival_owned[i].returnPieceType() == ChessPiece::PieceType::ROOK ||
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN))
+					if ((rival_owned[j].returnPieceType() == ChessPiece::PieceType::ROOK ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN))
 					{
 						m_check = true;
 						up.x = 0 + loc.x;
@@ -709,10 +700,12 @@ void GameEvent::checkSeeker()
 						break;
 					}
 					up_check = true;
+					
 				}
-				else if (current_owned[i].returnSprite().getGlobalBounds().contains(0 + loc.x, to_up + loc.y))
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(0 + loc.x, to_up + loc.y))
 				{
 					up_check = true;
+					
 				}
 			}
 
@@ -720,10 +713,10 @@ void GameEvent::checkSeeker()
 			// down for queen and rook check
 			if (!down_check)
 			{
-				if (rival_owned[i].returnSprite().getGlobalBounds().contains(0 + loc.x, to_down + loc.y))
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(0 + loc.x, to_down + loc.y))
 				{
-					if ((rival_owned[i].returnPieceType() == ChessPiece::PieceType::ROOK ||
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN))
+					if ((rival_owned[j].returnPieceType() == ChessPiece::PieceType::ROOK ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN))
 					{
 						m_check = true;
 						down.x = 0 + loc.x;
@@ -731,10 +724,12 @@ void GameEvent::checkSeeker()
 						break;
 					}
 					down_check = true;
+					
 				}
-				else if (current_owned[i].returnSprite().getGlobalBounds().contains(0 + loc.x, to_down + loc.y))
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(0 + loc.x, to_down + loc.y))
 				{
 					down_check = true;
+					
 				}
 			}
 
@@ -743,10 +738,10 @@ void GameEvent::checkSeeker()
 			// left for queen and rook check
 			if (!left_check)
 			{
-				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_left + loc.x, 0 + loc.y))
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_left + loc.x, 0 + loc.y))
 				{
-					if ((rival_owned[i].returnPieceType() == ChessPiece::PieceType::ROOK ||
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN))
+					if ((rival_owned[j].returnPieceType() == ChessPiece::PieceType::ROOK ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN))
 					{
 						m_check = true;
 						left.x = to_left + i + loc.x; //reset to_left
@@ -754,20 +749,22 @@ void GameEvent::checkSeeker()
 						break;
 					}
 					left_check = true;
+					
 				}
-				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_left + loc.x, 0 + loc.y))
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_left + loc.x, 0 + loc.y))
 				{
 					left_check = true;
+					
 				}
 			}
 
 			// right for queen and rook check
 			if (!right_check)
 			{
-				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_right + loc.x, 0 + loc.y))
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_right + loc.x, 0 + loc.y))
 				{
-					if ((rival_owned[i].returnPieceType() == ChessPiece::PieceType::ROOK ||
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN))
+					if ((rival_owned[j].returnPieceType() == ChessPiece::PieceType::ROOK ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN))
 					{
 						m_check = true;
 						right.x = to_right - i + loc.x; // reset to_right
@@ -775,10 +772,12 @@ void GameEvent::checkSeeker()
 						break;
 					}
 					right_check = true;
+					
 				}
-				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_right + loc.x, 0 + loc.y))
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_right + loc.x, 0 + loc.y))
 				{
 					right_check = true;
+					
 				}
 			}
 
@@ -788,11 +787,10 @@ void GameEvent::checkSeeker()
 			// top right for bishop and queen check
 			if (!diag_topright)
 			{
-
-				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_right + loc.x, to_up + loc.y))
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_right + loc.x, to_up + loc.y))
 				{
-					if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::BISHOP ||
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
 					{
 						m_check = true;
 						topright.x = to_right - i + loc.x;
@@ -800,20 +798,22 @@ void GameEvent::checkSeeker()
 						break;
 					}
 					diag_topright = true;
+					
 				}
-				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_right + loc.x, to_up + loc.y))
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_right + loc.x, to_up + loc.y))
 				{
 					diag_topright = true;
+					
 				}
 			}
 
 			// top left for bishop and queen check
 			if (!diag_topleft)
 			{
-				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_left + loc.x, to_up + loc.y))
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_left + loc.x, to_up + loc.y))
 				{
-					if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::BISHOP ||
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
 					{
 						m_check = true;
 						topleft.x = to_left + i + loc.x;
@@ -821,11 +821,13 @@ void GameEvent::checkSeeker()
 						break;
 					}
 					diag_topleft = true;
+					
 				}
 
-				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_left + loc.x, to_up + loc.y))
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_left + loc.x, to_up + loc.y))
 				{
 					diag_topleft = true;
+					
 				}
 			}
 			
@@ -833,10 +835,10 @@ void GameEvent::checkSeeker()
 			// bottom right for bishop and queen check
 			if (!diag_botright)
 			{
-				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_right + loc.x, to_down + loc.y))
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_right + loc.x, to_down + loc.y))
 				{
-					if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::BISHOP ||
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
 					{
 						m_check = true;
 						botright.x = to_right - i + loc.x;
@@ -844,10 +846,12 @@ void GameEvent::checkSeeker()
 						break;
 					}
 					diag_botright = true;
+					
 				}
-				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_right + loc.x, to_down + loc.y))
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_right + loc.x, to_down + loc.y))
 				{
 					diag_botright = true;
+					
 				}
 			}
 
@@ -855,10 +859,10 @@ void GameEvent::checkSeeker()
 			// bottom left for bishop and queen check
 			if (!diag_botleft)
 			{
-				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_left + loc.x, to_down + loc.y))
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_left + loc.x, to_down + loc.y))
 				{
-					if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::BISHOP ||
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
 					{
 						m_check = true;
 						botleft.x = to_left + i + loc.x;
@@ -866,38 +870,42 @@ void GameEvent::checkSeeker()
 						break;
 					}
 					diag_botleft = true;
+					
 				}
-				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_left + loc.x, to_down + loc.y))
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_left + loc.x, to_down + loc.y))
 				{
 					diag_botleft = true;
+					
 				}
 			}
 
 			// knight check
 			if (!horizontal_L)
 			{
-				if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::KNIGHT &&
-					(rival_owned[i].returnSprite().getGlobalBounds().contains(64 + loc.x, 128 + loc.y) ||
-					rival_owned[i].returnSprite().getGlobalBounds().contains(-64 + loc.x, 128 + loc.y) ||
-					rival_owned[i].returnSprite().getGlobalBounds().contains(64 + loc.x, -128 + loc.y) ||
-					rival_owned[i].returnSprite().getGlobalBounds().contains(-64 + loc.x, -128 + loc.y)))
+				if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::KNIGHT &&
+					(rival_owned[j].returnSprite().getGlobalBounds().contains(64 + loc.x, 128 + loc.y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(-64 + loc.x, 128 + loc.y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(64 + loc.x, -128 + loc.y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(-64 + loc.x, -128 + loc.y)))
 				{
 					m_check = true;
 					horizontal_L = true;
+					break;
 				}
 				
 			}
 
 			if (!vertical_L)
 			{
-				if ((rival_owned[i].returnSprite().getGlobalBounds().contains(128 + loc.x, 64 + loc.y) ||
-					rival_owned[i].returnSprite().getGlobalBounds().contains(-128 + loc.x, 64 + loc.y) ||
-					rival_owned[i].returnSprite().getGlobalBounds().contains(128 + loc.x, -64 + loc.y) ||
-					rival_owned[i].returnSprite().getGlobalBounds().contains(-128 + loc.x, -64 + loc.y)) &&
-					rival_owned[i].returnPieceType() == ChessPiece::PieceType::KNIGHT)
+				if ((rival_owned[j].returnPieceType() == ChessPiece::PieceType::KNIGHT) &&
+					(rival_owned[j].returnSprite().getGlobalBounds().contains(128 + loc.x, 64 + loc.y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(-128 + loc.x, 64 + loc.y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(128 + loc.x, -64 + loc.y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(-128 + loc.x, -64 + loc.y)))
 				{
 					m_check = true;
 					vertical_L = true;
+					break;
 				}
 			}
 
@@ -907,26 +915,28 @@ void GameEvent::checkSeeker()
 				if (m_playerturn)
 				{
 					// top right and left
-					if ((rival_owned[i].returnSprite().getGlobalBounds().contains(64 + loc.x, -64 + loc.y) &&
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::PAWN) ||
-						(rival_owned[i].returnSprite().getGlobalBounds().contains(-64 + loc.x, -64 + loc.y) &&
-							rival_owned[i].returnPieceType() == ChessPiece::PieceType::PAWN))
+					if ((rival_owned[j].returnSprite().getGlobalBounds().contains(64 + loc.x, -64 + loc.y) &&
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::PAWN) ||
+						(rival_owned[j].returnSprite().getGlobalBounds().contains(-64 + loc.x, -64 + loc.y) &&
+							rival_owned[j].returnPieceType() == ChessPiece::PieceType::PAWN))
 					{
 						m_check = true;
 						pawn_check = true;
+						break;
 					}
 				}
 					
 				else
 				{
 					// bottom right and left
-					if ((rival_owned[i].returnSprite().getGlobalBounds().contains(64 + loc.x, 64 + loc.y) &&
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::PAWN) ||
-						(rival_owned[i].returnSprite().getGlobalBounds().contains(-64 + loc.x, 64 + loc.y) &&
-							rival_owned[i].returnPieceType() == ChessPiece::PieceType::PAWN))
+					if ((rival_owned[j].returnSprite().getGlobalBounds().contains(64 + loc.x, 64 + loc.y) &&
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::PAWN) ||
+						(rival_owned[j].returnSprite().getGlobalBounds().contains(-64 + loc.x, 64 + loc.y) &&
+							rival_owned[j].returnPieceType() == ChessPiece::PieceType::PAWN))
 					{
 						m_check = true;
 						pawn_check = true;
+						break;
 					}
 					
 				}
@@ -936,56 +946,21 @@ void GameEvent::checkSeeker()
 }
 
 // function to check any potential threats if move to x, y position
-// (useful for king)
-bool GameEvent::checkSeeker(int x, int y)
+// loc is used for king purposes only
+bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSprite().getPosition();*/)
 {
 	
 	std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
 	std::vector<ChessPiece>& rival_owned{ (m_playerturn) ? enemy_owned : player_owned };
-	/*
-	ChessPiece* king = nullptr;
-	sf::Vector2f loc;
-	
-	if (m_chosen == nullptr || m_chosen->returnPieceType() != ChessPiece::PieceType::KING)
-	{
-		for (ChessPiece& k : current_owned)
-		{
-			if (k.returnPieceType() == ChessPiece::PieceType::KING)
-			{
-				king = &k;
-				break;
-			}
-		}
-		loc = king->returnSprite().getPosition();
-	}
-	else if (m_chosen->returnPieceType() == ChessPiece::PieceType::KING &&
-		m_chosen->returnColorType() == current_owned[0].returnColorType())
-	{
-		loc = m_chosen->returnSprite().getPosition();
 
-	}
-
-	// default check seeker for king
-	if (x == 0 && y == 0)
-	{
-		x += loc.x;
-		y += loc.y;
-	}
-	// if not, then because the function illustrate what happen if piece moved with x,y offset
-	// then illustrate king with piece's location then moved to desired location
-	else
-	{
-
-	}
-	*/
-
-	sf::Vector2f loc{ m_chosen->returnSprite().getPosition() };
 	x += loc.x;
 	y += loc.y;
 	bool up_check{ false }, down_check{ false }, left_check{ false },
 		right_check{ false }, diag_topright{ false }, diag_topleft{ false },
 		diag_botright{ false }, diag_botleft{ false }, horizontal_L{ false }, vertical_L{ false },
 		pawn_check{ false };
+
+	// check blocking pieces in front, back, left, right, diagonal
 
 	// checks here are executed once if a piece exist
 	// if there is a piece not rook/queen in front of king, front check wont be done again
@@ -997,24 +972,38 @@ bool GameEvent::checkSeeker(int x, int y)
 		int to_right{ 64 + i };
 		int to_left{ -64 - i };
 
-		for (std::size_t i{ 0 }; i < rival_owned.size(); i++)
+		if ((x - loc.x == to_right || x - loc.x == to_left)
+			&& (y - loc.y == to_up || y - loc.y == to_down))
 		{
+			continue;
+		}
+
+		for (std::size_t j{ 0 }; j < rival_owned.size(); j++)
+		{
+			// default movement if there is piece blocking
+
+			if (current_owned[j].returnSprite().getGlobalBounds().contains(0 + x, 0 + y))
+			{
+				return true;
+			}
+
 			// vertical
 
 			// up
 			if (!up_check)
 			{
-				if (rival_owned[i].returnSprite().getGlobalBounds().contains(0 + x, to_up + y))
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(0 + x, to_up + y))
 				{
-					if ((rival_owned[i].returnPieceType() == ChessPiece::PieceType::ROOK ||
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN))
+					if ((rival_owned[j].returnPieceType() == ChessPiece::PieceType::ROOK ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN))
 					{
 						return true;
-
+						
 					}
 					up_check = true;
 				}
-				else if (current_owned[i].returnSprite().getGlobalBounds().contains(0 + x, to_up + y))
+				
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(0 + x, to_up + y))
 				{
 					up_check = true;
 				}
@@ -1024,17 +1013,18 @@ bool GameEvent::checkSeeker(int x, int y)
 			// down
 			if (!down_check)
 			{
-				if (rival_owned[i].returnSprite().getGlobalBounds().contains(0 + x, to_down + y))
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(0 + x, to_down + y))
 				{
-					if ((rival_owned[i].returnPieceType() == ChessPiece::PieceType::ROOK ||
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN))
+					if ((rival_owned[j].returnPieceType() == ChessPiece::PieceType::ROOK ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN))
 					{
 						return true;
 						
 					}
 					down_check = true;
 				}
-				else if (current_owned[i].returnSprite().getGlobalBounds().contains(0 + x, to_down + y))
+
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(0 + x, to_down + y))
 				{
 					down_check = true;
 				}
@@ -1045,17 +1035,17 @@ bool GameEvent::checkSeeker(int x, int y)
 			// left
 			if (!left_check)
 			{
-				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_left + x, 0 + y))
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_left + x, 0 + y))
 				{
-					if ((rival_owned[i].returnPieceType() == ChessPiece::PieceType::ROOK ||
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN))
+					if ((rival_owned[j].returnPieceType() == ChessPiece::PieceType::ROOK ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN))
 					{
 						return true;
 						
 					}
 					left_check = true;
 				}
-				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_left + x, 0 + y))
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_left + x, 0 + y))
 				{
 					left_check = true;
 				}
@@ -1064,17 +1054,16 @@ bool GameEvent::checkSeeker(int x, int y)
 			// right
 			if (!right_check)
 			{
-				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_right + x, 0 + y))
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_right + x, 0 + y))
 				{
-					if ((rival_owned[i].returnPieceType() == ChessPiece::PieceType::ROOK ||
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN))
+					if ((rival_owned[j].returnPieceType() == ChessPiece::PieceType::ROOK ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN))
 					{
 						return true;
-						
 					}
 					right_check = true;
 				}
-				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_right + x, 0 + y))
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_right + x, 0 + y))
 				{
 					right_check = true;
 				}
@@ -1088,17 +1077,17 @@ bool GameEvent::checkSeeker(int x, int y)
 			if (!diag_topright)
 			{
 
-				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_right + x, to_up + y))
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_right + x, to_up + y))
 				{
-					if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::BISHOP ||
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
 					{
 						return true;
 						
 					}
 					diag_topright = true;
 				}
-				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_right + x, to_up + y))
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_right + x, to_up + y))
 				{
 					diag_topright = true;
 				}
@@ -1107,10 +1096,10 @@ bool GameEvent::checkSeeker(int x, int y)
 			// top left
 			if (!diag_topleft)
 			{
-				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_left + x, to_up + y))
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_left + x, to_up + y))
 				{
-					if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::BISHOP ||
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
 					{
 						return true;
 						
@@ -1118,7 +1107,7 @@ bool GameEvent::checkSeeker(int x, int y)
 					diag_topleft = true;
 				}
 
-				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_left + x, to_up + y))
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_left + x, to_up + y))
 				{
 					diag_topleft = true;
 				}
@@ -1128,17 +1117,17 @@ bool GameEvent::checkSeeker(int x, int y)
 			// bottom right
 			if (!diag_botright)
 			{
-				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_right + x, to_down + y))
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_right + x, to_down + y))
 				{
-					if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::BISHOP ||
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
 					{
 						return true;
 						
 					}
 					diag_botright = true;
 				}
-				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_right + x, to_down + y))
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_right + x, to_down + y))
 				{
 					diag_botright = true;
 				}
@@ -1148,17 +1137,17 @@ bool GameEvent::checkSeeker(int x, int y)
 			// bottom left
 			if (!diag_botleft)
 			{
-				if (rival_owned[i].returnSprite().getGlobalBounds().contains(to_left + x, to_down + y))
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_left + x, to_down + y))
 				{
-					if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::BISHOP ||
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
 					{
 						return true;
 						
 					}
 					diag_botleft = true;
 				}
-				else if (current_owned[i].returnSprite().getGlobalBounds().contains(to_left + x, to_down + y))
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_left + x, to_down + y))
 				{
 					diag_botleft = true;
 				}
@@ -1167,28 +1156,26 @@ bool GameEvent::checkSeeker(int x, int y)
 			// knight check
 			if (!horizontal_L)
 			{
-				if (rival_owned[i].returnPieceType() == ChessPiece::PieceType::KNIGHT &&
-					(rival_owned[i].returnSprite().getGlobalBounds().contains(64 + x, 128 + y) ||
-						rival_owned[i].returnSprite().getGlobalBounds().contains(-64 + x, 128 + y) ||
-						rival_owned[i].returnSprite().getGlobalBounds().contains(64 + x, -128 + y) ||
-						rival_owned[i].returnSprite().getGlobalBounds().contains(-64 + x, -128 + y)))
+				if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::KNIGHT &&
+					(rival_owned[j].returnSprite().getGlobalBounds().contains(64 + x, 128 + y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(-64 + x, 128 + y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(64 + x, -128 + y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(-64 + x, -128 + y)))
 				{
-					m_check = true;
-					horizontal_L = true;
+					return true;
 				}
 
 			}
 
 			if (!vertical_L)
 			{
-				if ((rival_owned[i].returnSprite().getGlobalBounds().contains(128 + x, 64 + y) ||
-					rival_owned[i].returnSprite().getGlobalBounds().contains(-128 + x, 64 + y) ||
-					rival_owned[i].returnSprite().getGlobalBounds().contains(128 + x, -64 + y) ||
-					rival_owned[i].returnSprite().getGlobalBounds().contains(-128 + x, -64 + y)) &&
-					rival_owned[i].returnPieceType() == ChessPiece::PieceType::KNIGHT)
+				if ((rival_owned[j].returnPieceType() == ChessPiece::PieceType::KNIGHT) &&
+					(rival_owned[j].returnSprite().getGlobalBounds().contains(128 + x, 64 + y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(-128 + x, 64 + y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(128 + x, -64 + y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(-128 + x, -64 + y)))
 				{
-					m_check = true;
-					vertical_L = true;
+					return true;
 				}
 			}
 
@@ -1198,26 +1185,24 @@ bool GameEvent::checkSeeker(int x, int y)
 				if (m_playerturn)
 				{
 					// top right and left
-					if ((rival_owned[i].returnSprite().getGlobalBounds().contains(64 + x, -64 + y) &&
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::PAWN) ||
-						(rival_owned[i].returnSprite().getGlobalBounds().contains(-64 + x, -64 + y) &&
-							rival_owned[i].returnPieceType() == ChessPiece::PieceType::PAWN))
+					if ((rival_owned[j].returnSprite().getGlobalBounds().contains(64 + x, -64 + y) &&
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::PAWN) ||
+						(rival_owned[j].returnSprite().getGlobalBounds().contains(-64 + x, -64 + y) &&
+							rival_owned[j].returnPieceType() == ChessPiece::PieceType::PAWN))
 					{
-						m_check = true;
-						pawn_check = true;
+						return true;
 					}
 				}
 
 				else
 				{
 					// bottom right and left
-					if ((rival_owned[i].returnSprite().getGlobalBounds().contains(64 + x, 64 + y) &&
-						rival_owned[i].returnPieceType() == ChessPiece::PieceType::PAWN) ||
-						(rival_owned[i].returnSprite().getGlobalBounds().contains(-64 + x, 64 + y) &&
-							rival_owned[i].returnPieceType() == ChessPiece::PieceType::PAWN))
+					if ((rival_owned[j].returnSprite().getGlobalBounds().contains(64 + x, 64 + y) &&
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::PAWN) ||
+						(rival_owned[j].returnSprite().getGlobalBounds().contains(-64 + x, 64 + y) &&
+							rival_owned[j].returnPieceType() == ChessPiece::PieceType::PAWN))
 					{
-						m_check = true;
-						pawn_check = true;
+						return true;
 					}
 
 				}
@@ -1225,78 +1210,20 @@ bool GameEvent::checkSeeker(int x, int y)
 		}
 	}
 
-	// for pawn and knight
-	for (ChessPiece& p : rival_owned)
-	{
-		// player side pawn check
-		if (m_playerturn)
-		{
-			// top right and left
-			if ((p.returnSprite().getGlobalBounds().contains(64 + x, -64 + y) &&
-				p.returnPieceType() == ChessPiece::PieceType::PAWN) ||
-				(p.returnSprite().getGlobalBounds().contains(-64 + x, -64 + y) &&
-					p.returnPieceType() == ChessPiece::PieceType::PAWN))
-			{
-				return true;
-			}
-		}
-		// enemy side pawn check
-		else
-		{
-			// bottom right and left
-			if ((p.returnSprite().getGlobalBounds().contains(64 + x, 64 + y) &&
-				p.returnPieceType() == ChessPiece::PieceType::PAWN) ||
-				(p.returnSprite().getGlobalBounds().contains(-64 + x, 64 + y) &&
-					p.returnPieceType() == ChessPiece::PieceType::PAWN))
-			{
-				return true;
-			}
-		}
-
-		// knight
-
-		// horizontal L
-		if ((p.returnSprite().getGlobalBounds().contains(64 + x, 128 + y) ||
-			p.returnSprite().getGlobalBounds().contains(-64 + x, 128 + y) ||
-			p.returnSprite().getGlobalBounds().contains(64 + x, -128 + y) ||
-			p.returnSprite().getGlobalBounds().contains(-64 + x, -128 + y)) &&
-			p.returnPieceType() == ChessPiece::PieceType::KNIGHT)
-		{
-			return true;
-		}
-
-		// vertical L
-		else if ((p.returnSprite().getGlobalBounds().contains(128 + x, 64 + y) ||
-			p.returnSprite().getGlobalBounds().contains(-128 + x, 64 + y) ||
-			p.returnSprite().getGlobalBounds().contains(128 + x, -64 + y) ||
-			p.returnSprite().getGlobalBounds().contains(-128 + x, -64 + y)) &&
-			p.returnPieceType() == ChessPiece::PieceType::KNIGHT)
-		{
-			return true;
-		}
-	}
-
 	return false;
 }
 
-bool GameEvent::findKing(int x, int y, std::vector<ChessPiece>& current_owned)
+sf::Vector2f GameEvent::findKingLoc()
 {
-	sf::Vector2f loc{ m_chosen->returnSprite().getPosition() };
-	x += loc.x;
-	y += loc.y;
+	std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
 
-	ChessPiece* king = nullptr;
 	for (ChessPiece& k : current_owned)
 	{
 		if (k.returnPieceType() == ChessPiece::PieceType::KING)
 		{
-			king = &k;
-			break;
+			return k.returnSprite().getPosition();
 		}
 	}
-
-	sf::Vector2f kingloc{ king->returnSprite().getPosition() };
-	return true;
 }
 
 // leave eat_enemy empty if variable doesnt exist inside caller
@@ -1304,10 +1231,12 @@ void GameEvent::movingAction(int x, int y, bool not_blocked, std::vector<ChessPi
 	bool eat_enemy /*= false*/)
 {
 	bool is_king{ m_chosen->returnPieceType() == ChessPiece::PieceType::KING };
+
 	if (not_blocked) // movements allowed
 	{
 		if (m_check && !is_king)
 		{
+			// use eating enemy first as condition to prevent enemy eating double
 			// if help king by eating
 			if (eat_enemy) // pawn only
 			{
@@ -1348,7 +1277,8 @@ void GameEvent::movingAction(int x, int y, bool not_blocked, std::vector<ChessPi
 		}
 		else
 		{
-			if (!eat_enemy && !eatEnemy(x, y, rival_owned)) // put eat_enemy here so it wont be nullptr and stayed in same turn
+			// put eat_enemy here so it wont be nullptr and stayed in same turn
+			if (!eat_enemy && !eatEnemy(x, y, rival_owned)) 
 			{
 				m_chosen->returnSprite().move(x, y);
 				if (is_king) // king can move so not check
@@ -1420,4 +1350,75 @@ void GameEvent::choosePromotion(int x, int y)
 			break;
 		}
 	}
+}
+
+// if check, perform king checkseeker function to see if theres any tile king can be moved
+// use loop for x and y
+bool GameEvent::staleCheck()
+{
+	sf::Vector2f loc{ findKingLoc() };
+	bool first_time{};
+	bool stale{};
+
+	int max_top{ 32 };
+	int max_bottom{ 480 };
+	int max_right{ 480 };
+	int max_left{ 32 };
+
+	// check if king on top or bottom on board or even on end of right or left side
+	// if king on bottom of board, dont checkseeker on y = 64
+	if (loc.y == max_bottom) 
+	{
+		if (loc.x == max_right)
+		{
+			stale = (checkSeeker(0, -64, loc) && checkSeeker(-64, 0, loc) &&
+				checkSeeker(-64, -64, loc));
+		}
+		else if (loc.x == max_left)
+		{
+			stale = (checkSeeker(0, -64, loc) && checkSeeker(64, 0, loc) &&
+				checkSeeker(64, -64, loc));
+		}
+		else
+		{
+			stale = (checkSeeker(0, -64, loc) && checkSeeker(64, 0, loc) &&
+				checkSeeker(-64, 0, loc) && checkSeeker(64, -64, loc) &&
+				checkSeeker(-64, -64, loc));
+		}
+	}
+	// if king on top of board, dont checkseeker on y = -64
+	else if (loc.y == max_top) 
+	{
+		if (loc.x == max_right)
+		{
+			stale = (checkSeeker(0, 64, loc) && checkSeeker(-64, 0, loc) && 
+				checkSeeker(-64, 64, loc));
+		}
+		else if (loc.x == max_left)
+		{
+			stale = (checkSeeker(0, 64, loc) && checkSeeker(64, 0, loc) && 
+				checkSeeker(64, 64, loc));
+		}
+		else
+		{
+			stale = (checkSeeker(0, 64, loc) && checkSeeker(64, 0, loc) && 
+				checkSeeker(-64, 0, loc) && checkSeeker(64, 64, loc) && 
+				checkSeeker(-64, 64, loc));
+		}
+	}
+	// if king on middle of board
+	else
+	{
+		stale = (checkSeeker(0, -64, loc) && checkSeeker(0, 64, loc) &&
+		checkSeeker(64, 0, loc) && checkSeeker(-64, 0, loc) &&
+		checkSeeker(64, -64, loc) && checkSeeker(-64, -64, loc) &&
+		checkSeeker(64, 64, loc) && checkSeeker(-64, 64, loc));
+	}
+
+	return stale;
+}
+
+const bool GameEvent::isCheck()
+{
+	return m_check;
 }

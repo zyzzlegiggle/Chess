@@ -12,7 +12,7 @@ private:
 	Player& m_player;
 	Board& m_board;
 	Enemy& m_enemy;
-	ChessPiece* m_chosen = nullptr;
+	static inline ChessPiece* m_chosen = nullptr;
 	bool m_playerturn{ true };
 	sf::RenderWindow& m_window;
 	bool m_promotion{ false };
@@ -26,6 +26,7 @@ public:
 	std::vector<ChessPiece>& enemy_owned{ m_enemy.returnVector() };
 	std::vector<sf::Sprite>& board_vector{ m_board.returnVector() };
 	static inline sf::Vector2f up, down, left, right, topright, topleft, botright, botleft;
+	static inline bool can_move{ false };
 
 	void showPieces();
 
@@ -68,9 +69,9 @@ public:
 
 	void checkSeeker();
 
-	bool checkSeeker(int x, int y);
+	bool checkSeeker(int x, int y, sf::Vector2f loc = m_chosen->returnSprite().getPosition());
 
-	bool findKing(int x, int y, std::vector<ChessPiece>& current_owned);
+	sf::Vector2f findKingLoc();
 
 	void movingAction(int x, int y, bool not_blocked, std::vector<ChessPiece>& rival_owned,
 		bool eat_enemy = false);
@@ -80,5 +81,9 @@ public:
 	bool pawnPromotion();
 
 	void choosePromotion(int x, int y);
+
+	bool staleCheck();
+
+	const bool isCheck();
 };
 

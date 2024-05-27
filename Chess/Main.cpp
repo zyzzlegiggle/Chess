@@ -68,6 +68,12 @@ int main()
 					else if (game.isChosen())
 					{
 						game.checkSeeker();
+
+						if (game.isCheck())
+						{
+							game.staleCheck(); // check if king have allowed movements
+						}
+
 						game.movePiece(event.mouseButton.x, event.mouseButton.y);
 					}
 					else
