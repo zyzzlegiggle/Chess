@@ -61,23 +61,39 @@ int main()
 					std::cout << "mouse x: " << event.mouseButton.x << std::endl;
 					std::cout << "mouse y: " << event.mouseButton.y << std::endl;
 
+					game.checkSeeker();
+
+					
+
 					if (game.pawnPromotion())
 					{
 						game.choosePromotion(event.mouseButton.x, event.mouseButton.y);
 					}
+					// main game 
 					else if (game.isChosen())
 					{
-						game.checkSeeker();
-
-						if (game.isCheck())
-						{
-							game.staleCheck(); // check if king have allowed movements
-						}
-
 						game.movePiece(event.mouseButton.x, event.mouseButton.y);
 					}
 					else
 					{
+						if (game.isCheck())
+						{
+							if (game.oneKing())
+							{
+								game.checkMate();
+							}
+							else if (game.staleCheck())
+							{
+								if (game.findHelper())
+								{
+									std::cout << "helper found";
+								}
+								else
+								{
+									game.checkMate();
+								}
+							}
+						}
 						game.choosePiece(event.mouseButton.x, event.mouseButton.y);
 					}
 

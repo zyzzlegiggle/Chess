@@ -15,9 +15,12 @@ private:
 	static inline ChessPiece* m_chosen = nullptr;
 	bool m_playerturn{ true };
 	sf::RenderWindow& m_window;
+
 	bool m_promotion{ false };
 	bool m_check{ false };
 	bool m_firsttime{ true }; // for showing the board the first time
+	bool m_checkmate{ false };
+
 	std::vector<ChessPiece> m_choices; // choices for pawn promotion
 public:
 	GameEvent(Player& player, Board& board, Enemy& enemy, sf::RenderWindow& window);
@@ -25,8 +28,6 @@ public:
 	std::vector<ChessPiece>& player_owned{ m_player.returnVector() };
 	std::vector<ChessPiece>& enemy_owned{ m_enemy.returnVector() };
 	std::vector<sf::Sprite>& board_vector{ m_board.returnVector() };
-	static inline sf::Vector2f up, down, left, right, topright, topleft, botright, botleft;
-	static inline bool can_move{ false };
 
 	void showPieces();
 
@@ -85,5 +86,16 @@ public:
 	bool staleCheck();
 
 	const bool isCheck();
+
+	bool findHelper();
+
+	const bool isGameOver();
+
+	void checkMate();
+
+	bool oneKing()
+	{
+
+	}
 };
 

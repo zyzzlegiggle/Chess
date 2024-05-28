@@ -70,21 +70,6 @@ void GameEvent::choosePiece(int x, int y)
 	std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
 	for (ChessPiece& piece : current_owned)
 	{
-		/*
-		if (check)
-		{
-			if (piece.returnSprite().getGlobalBounds().contains(x, y) &&
-				piece.returnPieceType() == ChessPiece::PieceType::KING)
-			{
-				m_chosen = &piece;
-				break;
-			}
-			else
-			{
-				m_chosen = nullptr;
-			}
-		}
-		*/
 		if (piece.returnSprite().getGlobalBounds().contains(x, y))
 		{
 			m_chosen = &piece;
@@ -112,6 +97,11 @@ bool GameEvent::isChosen()
 // piece movements
 void GameEvent::movePiece(int x, int y)
 {
+	if (m_chosen == nullptr)
+	{
+		return;
+	}
+
 	// check if piece can be moved (not eaten yet)
 	if (!m_chosen->isMovable())
 	{
@@ -695,8 +685,6 @@ void GameEvent::checkSeeker()
 						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN))
 					{
 						m_check = true;
-						up.x = 0 + loc.x;
-						up.y = to_up + i + loc.y; // reset to_up
 						break;
 					}
 					up_check = true;
@@ -719,8 +707,6 @@ void GameEvent::checkSeeker()
 						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN))
 					{
 						m_check = true;
-						down.x = 0 + loc.x;
-						down.y = to_down - i + loc.y; // reset to_down
 						break;
 					}
 					down_check = true;
@@ -744,8 +730,6 @@ void GameEvent::checkSeeker()
 						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN))
 					{
 						m_check = true;
-						left.x = to_left + i + loc.x; //reset to_left
-						left.y = 0 + loc.y;
 						break;
 					}
 					left_check = true;
@@ -767,8 +751,6 @@ void GameEvent::checkSeeker()
 						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN))
 					{
 						m_check = true;
-						right.x = to_right - i + loc.x; // reset to_right
-						right.y = 0 + loc.y;
 						break;
 					}
 					right_check = true;
@@ -793,8 +775,6 @@ void GameEvent::checkSeeker()
 						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
 					{
 						m_check = true;
-						topright.x = to_right - i + loc.x;
-						topright.y = to_up + i + loc.y;
 						break;
 					}
 					diag_topright = true;
@@ -816,8 +796,6 @@ void GameEvent::checkSeeker()
 						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
 					{
 						m_check = true;
-						topleft.x = to_left + i + loc.x;
-						topleft.y = to_up + i + loc.y;
 						break;
 					}
 					diag_topleft = true;
@@ -841,8 +819,6 @@ void GameEvent::checkSeeker()
 						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
 					{
 						m_check = true;
-						botright.x = to_right - i + loc.x;
-						botright.y = to_down - i + loc.y;
 						break;
 					}
 					diag_botright = true;
@@ -865,8 +841,6 @@ void GameEvent::checkSeeker()
 						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
 					{
 						m_check = true;
-						botleft.x = to_left + i + loc.x;
-						botleft.y = to_down - i + loc.y;
 						break;
 					}
 					diag_botleft = true;
@@ -1227,6 +1201,7 @@ sf::Vector2f GameEvent::findKingLoc()
 }
 
 // leave eat_enemy empty if variable doesnt exist inside caller
+// if check and move not helping king, m_chosen = nullptr
 void GameEvent::movingAction(int x, int y, bool not_blocked, std::vector<ChessPiece>& rival_owned,
 	bool eat_enemy /*= false*/)
 {
@@ -1357,6 +1332,7 @@ void GameEvent::choosePromotion(int x, int y)
 bool GameEvent::staleCheck()
 {
 	sf::Vector2f loc{ findKingLoc() };
+
 	bool first_time{};
 	bool stale{};
 
@@ -1421,4 +1397,341 @@ bool GameEvent::staleCheck()
 const bool GameEvent::isCheck()
 {
 	return m_check;
+}
+
+bool GameEvent::findHelper()
+{
+	std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
+	std::vector<ChessPiece>& rival_owned{ (m_playerturn) ? enemy_owned : current_owned };
+
+	sf::Vector2f loc;
+	int x, y; // to reverse the movement at end of function
+	for (ChessPiece& p : current_owned)
+	{
+		m_chosen = &p;
+		loc = m_chosen->returnSprite().getPosition();
+
+		if (!m_chosen->isMovable())
+		{
+			continue;
+		}
+
+		switch (m_chosen->returnPieceType())
+		{
+		case ChessPiece::PieceType::PAWN:
+		{
+			movePawn(0, -64, current_owned, rival_owned, loc); 
+			x = 0, y = -64;
+			if (m_chosen == nullptr)
+			{
+				m_chosen = &p;
+				movePawn(0, -128, current_owned, rival_owned, loc);
+				x = 0, y = -128;
+			}
+			break;
+		}
+		case ChessPiece::PieceType::KNIGHT:
+		{
+			bool L1, L2, L3, L4, L5, L6, L7, L8;
+			L1 = L2 = L3 = L4 = L5 = L6 = L7 = L8 = true;
+			for (int i{ 0 }; i < 8; i++)
+			{
+				m_chosen = &p;
+				if (L1)
+				{
+					moveKnight(64, 128, current_owned, rival_owned, loc);
+					L1 = (m_chosen != nullptr);
+					x = 64, y = 128;
+				}
+				else if (L2)
+				{
+					moveKnight(64, -128, current_owned, rival_owned, loc);
+					L2 = (m_chosen != nullptr);
+					x = 64, y = -128;
+				}
+				else if (L3)
+				{
+					moveKnight(-64, 128, current_owned, rival_owned, loc);
+					L3 = (m_chosen != nullptr);
+					x = -64, y = 128;
+				}
+				else if (L4)
+				{
+					moveKnight(-64, -128, current_owned, rival_owned, loc);
+					L4 = (m_chosen != nullptr);
+					x = -64, y = -128;
+				}
+				else if (L5)
+				{
+					moveKnight(128, 64, current_owned, rival_owned, loc);
+					L5 = (m_chosen != nullptr);
+					x = 128, y = 64;
+				}
+				else if (L6)
+				{
+					moveKnight(128, -64, current_owned, rival_owned, loc);
+					L6 = (m_chosen != nullptr);
+					x = 128, y = -64;
+				}
+				else if (L7)
+				{
+					moveKnight(-128, 64, current_owned, rival_owned, loc);
+					L7 = (m_chosen != nullptr);
+					x = -128, y = 64;
+				}
+				else if (L8)
+				{
+					moveKnight(-128, -64, current_owned, rival_owned, loc);
+					L8 = (m_chosen != nullptr);
+					x = -128, y = -64;
+				}
+
+				if (!m_check)
+				{
+					break;
+				}
+			}
+
+			break;
+		}
+
+		case ChessPiece::PieceType::BISHOP:
+		{
+			for (int i{ 0 }; i <= 512; i += 64)
+			{
+				int to_down{ 64 + i };
+				int to_up{ -64 - i };
+				int to_right{ 64 + i };
+				int to_left{ -64 - i };
+				bool diag_topright, diag_topleft, diag_botright, diag_botleft;
+				diag_topright = diag_topleft = diag_botright = diag_botleft = true;
+				m_chosen = &p;
+
+				// make sure to move to every possible way before next iteration
+				for (int j{ 0 }; j < 4; j++)
+				{
+					m_chosen = &p;
+
+					if (diag_topright)
+					{
+						moveBishop(to_right, to_up, current_owned, rival_owned, loc);
+						diag_topright = (m_chosen != nullptr);
+						x = to_right, y = to_up;
+					}
+					else if (diag_topleft)
+					{
+						moveBishop(to_left, to_up, current_owned, rival_owned, loc);
+						diag_topleft = (m_chosen != nullptr);
+						x = to_left, y = to_up;
+					}
+					else if (diag_botleft)
+					{
+						moveBishop(to_left, to_down, current_owned, rival_owned, loc);
+						diag_botleft = (m_chosen != nullptr);
+						x = to_left, y = to_down;
+					}
+					else if (diag_botright)
+					{
+						moveBishop(to_right, to_down, current_owned, rival_owned, loc);
+						diag_botright = (m_chosen != nullptr);
+					}
+
+					if (!m_check)
+					{
+						break;
+					}
+				}
+
+				if (!m_check)
+				{
+					break;
+				}
+			}
+			break;
+		}
+
+		case ChessPiece::PieceType::QUEEN:
+		{
+			for (int i{ 0 }; i <= 512; i += 64)
+			{
+				int to_down{ 64 + i };
+				int to_up{ -64 - i };
+				int to_right{ 64 + i };
+				int to_left{ -64 - i };
+				bool up, down, left, right, diag_topright,
+					diag_topleft, diag_botright, diag_botleft;
+				up = down = left = right =
+					diag_topright = diag_topleft =
+					diag_botright = diag_botleft = true;
+				m_chosen = &p;
+
+				// make sure to move to every possible way before next iteration
+				for (int j{ 0 }; j < 8; j++)
+				{
+					m_chosen = &p;
+
+					if (up)
+					{
+						moveQueen(0, to_up, current_owned, rival_owned, loc);
+						up = (m_chosen != nullptr);
+						x = 0, y = to_up;
+					}
+					else if (down)
+					{
+						moveQueen(0, to_down, current_owned, rival_owned, loc);
+						down = (m_chosen != nullptr);
+						x = 0, y = to_down;
+					}
+					else if (left)
+					{
+						moveQueen(to_left, 0, current_owned, rival_owned, loc);
+						left = (m_chosen != nullptr);
+						x = to_left, y = 0;
+					}
+					else if (right)
+					{
+						moveQueen(to_right, 0, current_owned, rival_owned, loc);
+						right = (m_chosen != nullptr);
+						x = to_right, y = 0;
+					}
+					else if (diag_topright)
+					{
+						moveQueen(to_right, to_up, current_owned, rival_owned, loc);
+						diag_topright = (m_chosen != nullptr);
+						x = to_right, y = to_up;
+					}
+					else if (diag_topleft)
+					{
+						moveQueen(to_left, to_up, current_owned, rival_owned, loc);
+						diag_topleft = (m_chosen != nullptr);
+						x = to_left, y = to_up;
+					}
+					else if (diag_botleft)
+					{
+						moveQueen(to_left, to_down, current_owned, rival_owned, loc);
+						diag_botleft = (m_chosen != nullptr);
+						x = to_left, y = to_down;
+					}
+					else if (diag_botright)
+					{
+						moveQueen(to_right, to_down, current_owned, rival_owned, loc);
+						diag_botright = (m_chosen != nullptr);
+						x = to_right, y = to_down;
+					}
+
+					if (!m_check)
+					{
+						break;
+					}
+				}
+
+				if (!m_check)
+				{
+					break;
+				}
+			}
+			break;
+		}
+		case ChessPiece::PieceType::ROOK:
+		{
+			for (int i{ 0 }; i <= 512; i += 64)
+			{
+				int to_down{ 64 + i };
+				int to_up{ -64 - i };
+				int to_right{ 64 + i };
+				int to_left{ -64 - i };
+				bool up, down, left, right;
+				up = down = left = right = true;
+				m_chosen = &p;
+
+				// make sure to move to every possible way before next iteration
+				for (int j{ 0 }; j < 4; j++)
+				{
+					m_chosen = &p;
+
+					if (up)
+					{
+						moveRook(0, to_up, current_owned, rival_owned, loc);
+						up = (m_chosen != nullptr);
+						x = 0, y = to_up;
+					}
+					else if (down)
+					{
+						moveRook(0, to_down, current_owned, rival_owned, loc);
+						down = (m_chosen != nullptr);
+						x = 0, y = to_down;
+					}
+					else if (left)
+					{
+						moveRook(to_left, 0, current_owned, rival_owned, loc);
+						left = (m_chosen != nullptr);
+						x = to_left, y = 0;
+					}
+					else if (right)
+					{
+						moveRook(to_right, 0, current_owned, rival_owned, loc);
+						right = (m_chosen != nullptr);
+						x = to_right, y = 0;
+					}
+
+					if (!m_check)
+					{
+						break;
+					}
+				}
+
+				if (!m_check)
+				{
+					break;
+				}
+			}
+			break;
+		}
+		}
+
+		if (!m_check)
+		{
+			break;
+		}
+	}
+
+	if (m_check)
+	{
+		return false;
+	}
+	else
+	{
+		m_chosen->returnSprite().move(-x, -y);
+		m_chosen = nullptr;
+		return true;
+	}
+}
+
+void GameEvent::checkMate()
+{
+	std::cout << "Checkmate\n";
+}
+
+bool GameEvent::oneKing()
+{
+	std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
+	
+	int piece_count{};
+
+	for (ChessPiece& k : current_owned)
+	{
+		if (k.isMovable())
+		{
+			piece_count++;
+		}
+	}
+
+	if (piece_count == 1)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
