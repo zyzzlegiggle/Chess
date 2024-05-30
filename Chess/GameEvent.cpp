@@ -8,6 +8,55 @@ GameEvent::GameEvent(Player& player, Board& board, Enemy& enemy, sf::RenderWindo
 {
 }
 
+void GameEvent::showBoard()
+{
+	std::size_t m_boardsize{ m_board.returnBoardSize() };
+	sf::Sprite& m_boxW{ m_board.returnTileW()};
+	sf::Sprite& m_boxB{ m_board.returnTileB() };
+	// put it inside the vector
+	std::size_t current_tile;
+	bool white_turn{ true };
+
+	float origin_x{};
+	float origin_y{};
+	for (std::size_t row{ 0 }; row < m_boardsize; row++)
+	{
+		if (row % 2)
+		{
+			white_turn = true;
+		}
+		else
+		{
+			white_turn = false;
+		}
+		for (std::size_t col{ 0 }; col < m_boardsize; col++)
+		{
+			current_tile = (row * m_boardsize) + col;
+
+			if (white_turn)
+			{
+				board_vector[current_tile] = m_boxW;
+				white_turn = false;
+			}
+			else
+			{
+				board_vector[current_tile] = m_boxB;
+				white_turn = true;
+			}
+
+			// draw tile on the app
+			board_vector[current_tile].setPosition(origin_x, origin_y);
+			board_vector[current_tile].scale(0.5f, 0.5f);
+			m_window.draw(board_vector[current_tile]);
+			origin_x += 64;
+		}
+
+		// move to new row and reset column position
+		origin_y += 64;
+		origin_x = 0;
+	}
+}
+
 // show the pieces on window
 void GameEvent::showPieces()
 {
@@ -615,6 +664,7 @@ bool GameEvent::onWayBlocked(int target_x, int target_y, int dir_x, int dir_y,
 // this function will move the chosen piece too
 bool GameEvent::eatEnemy(int x, int y, std::vector<ChessPiece>& rival_owned)
 {
+	m_eaten = nullptr;
 	for (std::size_t i{ 0 }; i < rival_owned.size(); i++)
 	{
 		if (rival_owned[i].returnSprite().getGlobalBounds().
@@ -622,6 +672,7 @@ bool GameEvent::eatEnemy(int x, int y, std::vector<ChessPiece>& rival_owned)
 		{
 			rival_owned[i].returnSprite().setPosition(600, 500);
 			rival_owned[i].isMovable() = false;
+			m_eaten = &rival_owned[i];
 			m_chosen->returnSprite().move(x, y);
 			return true;
 		}
@@ -932,7 +983,7 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 	bool up_check{ false }, down_check{ false }, left_check{ false },
 		right_check{ false }, diag_topright{ false }, diag_topleft{ false },
 		diag_botright{ false }, diag_botleft{ false }, horizontal_L{ false }, vertical_L{ false },
-		pawn_check{ false };
+		pawn_check{ false }, king_check{ false };
 
 	// check blocking pieces in front, back, left, right, diagonal
 
@@ -946,19 +997,75 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 		int to_right{ 64 + i };
 		int to_left{ -64 - i };
 
+		// this probably prevent the chosen piece to be checked
+		/*
 		if ((x - loc.x == to_right || x - loc.x == to_left)
 			&& (y - loc.y == to_up || y - loc.y == to_down))
 		{
 			continue;
 		}
+		*/
 
 		for (std::size_t j{ 0 }; j < rival_owned.size(); j++)
 		{
+
 			// default movement if there is piece blocking
 
 			if (current_owned[j].returnSprite().getGlobalBounds().contains(0 + x, 0 + y))
 			{
 				return true;
+			}
+
+			// king check
+			if (!king_check)
+			{
+				if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::KING)
+				{
+					if (rival_owned[j].returnSprite().
+						getGlobalBounds().contains(0 + x, -64 + y))
+					{
+						return true;
+					}
+					else if (rival_owned[j].returnSprite().
+						getGlobalBounds().contains(0 + x, 64 + y))
+					{
+						return true;
+					}
+					else if (rival_owned[j].returnSprite().
+						getGlobalBounds().contains(64 + x, 0 + y))
+					{
+						return true;
+					}
+					else if (rival_owned[j].returnSprite().
+						getGlobalBounds().contains(-64 + x, 0 + y))
+					{
+						return true;
+					}
+					else if (rival_owned[j].returnSprite().
+						getGlobalBounds().contains(64 + x, 64 + y))
+					{
+						return true;
+					}
+					else if (rival_owned[j].returnSprite().
+						getGlobalBounds().contains(64 + x, -64 + y))
+					{
+						return true;
+					}
+					else if (rival_owned[j].returnSprite().
+						getGlobalBounds().contains(-64 + x, 64 + y))
+					{
+						return true;
+					}
+					else if (rival_owned[j].returnSprite().
+						getGlobalBounds().contains(-64 + x, -64 + y))
+					{
+						return true;
+					}
+					else
+					{
+						king_check = true;
+					}
+				}
 			}
 
 			// vertical
@@ -1230,6 +1337,13 @@ void GameEvent::movingAction(int x, int y, bool not_blocked, std::vector<ChessPi
 				if (m_check)
 				{
 					m_chosen->returnSprite().move(-x, -y); // revert if king is still in check
+
+					// enemy recovery
+					sf::Vector2f loc{ m_chosen->returnSprite().getPosition() };
+					m_eaten->returnSprite().setPosition(x + loc.x, y + loc.y);
+					m_eaten->isMovable() = true;
+
+					m_eaten = nullptr;
 					m_chosen = nullptr;
 				}
 			}
@@ -1256,9 +1370,18 @@ void GameEvent::movingAction(int x, int y, bool not_blocked, std::vector<ChessPi
 			if (!eat_enemy && !eatEnemy(x, y, rival_owned)) 
 			{
 				m_chosen->returnSprite().move(x, y);
+
 				if (is_king) // king can move so not check
 				{
 					m_check = false;
+				}
+
+				checkSeeker(); // check current king condition
+
+				if (m_check)
+				{
+					m_chosen->returnSprite().move(-x, -y);
+					m_chosen = nullptr;
 				}
 			}
 		}
@@ -1329,7 +1452,7 @@ void GameEvent::choosePromotion(int x, int y)
 
 // if check, perform king checkseeker function to see if theres any tile king can be moved
 // use loop for x and y
-bool GameEvent::staleCheck()
+void GameEvent::staleCheck()
 {
 	sf::Vector2f loc{ findKingLoc() };
 
@@ -1385,13 +1508,28 @@ bool GameEvent::staleCheck()
 	// if king on middle of board
 	else
 	{
-		stale = (checkSeeker(0, -64, loc) && checkSeeker(0, 64, loc) &&
-		checkSeeker(64, 0, loc) && checkSeeker(-64, 0, loc) &&
-		checkSeeker(64, -64, loc) && checkSeeker(-64, -64, loc) &&
-		checkSeeker(64, 64, loc) && checkSeeker(-64, 64, loc));
+		if (loc.x == max_right)
+		{
+			stale = (checkSeeker(0, -64, loc) && checkSeeker(0, 64, loc) &&
+				checkSeeker(-64, 0, loc) && checkSeeker(-64, -64, loc) &&
+				checkSeeker(-64, 64, loc));
+		}
+		else if (loc.x == max_left)
+		{
+			stale = (checkSeeker(0, -64, loc) && checkSeeker(0, 64, loc) &&
+				checkSeeker(64, 0, loc) && checkSeeker(64, -64, loc) && 
+				checkSeeker(64, 64, loc));
+		}
+		else
+		{
+			stale = (checkSeeker(0, -64, loc) && checkSeeker(0, 64, loc) &&
+				checkSeeker(64, 0, loc) && checkSeeker(-64, 0, loc) &&
+				checkSeeker(64, -64, loc) && checkSeeker(-64, -64, loc) &&
+				checkSeeker(64, 64, loc) && checkSeeker(-64, 64, loc));
+		}
 	}
 
-	return stale;
+	m_stale = stale;
 }
 
 const bool GameEvent::isCheck()
@@ -1399,10 +1537,11 @@ const bool GameEvent::isCheck()
 	return m_check;
 }
 
+// this function makes m_chosen null
 bool GameEvent::findHelper()
 {
 	std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
-	std::vector<ChessPiece>& rival_owned{ (m_playerturn) ? enemy_owned : current_owned };
+	std::vector<ChessPiece>& rival_owned{ (m_playerturn) ? enemy_owned : player_owned };
 
 	sf::Vector2f loc;
 	int x, y; // to reverse the movement at end of function
@@ -1420,13 +1559,22 @@ bool GameEvent::findHelper()
 		{
 		case ChessPiece::PieceType::PAWN:
 		{
-			movePawn(0, -64, current_owned, rival_owned, loc); 
-			x = 0, y = -64;
+			int onetile{ 64 };
+			int twotile{ 128 };
+
+			if (m_playerturn)
+			{
+				onetile = -onetile;
+				twotile = -twotile;
+			}
+
+			movePawn(0, onetile, current_owned, rival_owned, loc); 
+			x = 0, y = onetile;
 			if (m_chosen == nullptr)
 			{
 				m_chosen = &p;
-				movePawn(0, -128, current_owned, rival_owned, loc);
-				x = 0, y = -128;
+				movePawn(0, twotile, current_owned, rival_owned, loc);
+				x = 0, y = twotile;
 			}
 			break;
 		}
@@ -1695,13 +1843,17 @@ bool GameEvent::findHelper()
 		}
 	}
 
-	if (m_check)
+	if (m_chosen == nullptr)
 	{
 		return false;
 	}
 	else
 	{
-		m_chosen->returnSprite().move(-x, -y);
+		// in case if king isnt checked, but stale
+		if (m_chosen != nullptr)
+		{
+			m_chosen->returnSprite().move(-x, -y);
+		}
 		m_chosen = nullptr;
 		return true;
 	}
@@ -1709,7 +1861,8 @@ bool GameEvent::findHelper()
 
 void GameEvent::checkMate()
 {
-	std::cout << "Checkmate\n";
+	m_checkmate = true;
+	std::cout << "Checkmate";
 }
 
 bool GameEvent::oneKing()
@@ -1734,4 +1887,14 @@ bool GameEvent::oneKing()
 	{
 		return false;
 	}
+}
+
+const bool GameEvent::isStale()
+{
+	return m_stale;
+}
+
+const bool GameEvent::isCheckmate()
+{
+	return m_checkmate;
 }

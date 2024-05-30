@@ -20,8 +20,13 @@ private:
 	bool m_check{ false };
 	bool m_firsttime{ true }; // for showing the board the first time
 	bool m_checkmate{ false };
+	bool m_stale{ false };
 
 	std::vector<ChessPiece> m_choices; // choices for pawn promotion
+
+	// last eaten piece for recovery in movingAction eatEnemy
+	// put it in eatEnemy the recover in movingAction to prevent blind eating
+	ChessPiece* m_eaten = nullptr;
 public:
 	GameEvent(Player& player, Board& board, Enemy& enemy, sf::RenderWindow& window);
 ;
@@ -30,6 +35,8 @@ public:
 	std::vector<sf::Sprite>& board_vector{ m_board.returnVector() };
 
 	void showPieces();
+
+	void showBoard();
 
 	void choosePiece(int x, int y);
 
@@ -83,19 +90,18 @@ public:
 
 	void choosePromotion(int x, int y);
 
-	bool staleCheck();
+	void staleCheck();
 
 	const bool isCheck();
 
 	bool findHelper();
 
-	const bool isGameOver();
-
 	void checkMate();
 
-	bool oneKing()
-	{
+	bool oneKing();
 
-	}
+	const bool isStale();
+
+	const bool isCheckmate();
 };
 

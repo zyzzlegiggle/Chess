@@ -21,7 +21,7 @@ int main()
 	sf::VideoMode desktop{ sf::VideoMode::getDesktopMode() };
 	*/
 
-	unsigned int screen_width{ 612 };
+	unsigned int screen_width{ 512 };
 	unsigned int screen_height{ 512 };
 
 
@@ -62,41 +62,39 @@ int main()
 					std::cout << "mouse y: " << event.mouseButton.y << std::endl;
 
 					game.checkSeeker();
-
+					game.staleCheck();
+					
 					
 
-					if (game.pawnPromotion())
+					if (!game.isCheckmate())
 					{
-						game.choosePromotion(event.mouseButton.x, event.mouseButton.y);
-					}
-					// main game 
-					else if (game.isChosen())
-					{
-						game.movePiece(event.mouseButton.x, event.mouseButton.y);
-					}
-					else
-					{
-						if (game.isCheck())
+						if (game.pawnPromotion())
+						{
+							game.choosePromotion(event.mouseButton.x, event.mouseButton.y);
+						}
+						// main game 
+						else if (game.isChosen())
+						{
+							game.movePiece(event.mouseButton.x, event.mouseButton.y);
+						}
+						else
 						{
 							if (game.oneKing())
 							{
 								game.checkMate();
 							}
-							else if (game.staleCheck())
+							else if (game.isStale())
 							{
-								if (game.findHelper())
-								{
-									std::cout << "helper found";
-								}
-								else
+								// makes m_chosen null, if outside, will stuck at !isChosen()
+								if (!game.findHelper())
 								{
 									game.checkMate();
+									std::cout << "checkmate";
 								}
 							}
+							game.choosePiece(event.mouseButton.x, event.mouseButton.y);
 						}
-						game.choosePiece(event.mouseButton.x, event.mouseButton.y);
 					}
-
 				}
 			}
 
@@ -110,7 +108,7 @@ int main()
 		// clear the window with black color
 		window.clear(sf::Color::Black);
 
-		board.drawBoard(window);
+		game.showBoard();
 
 		game.showPieces();
 		

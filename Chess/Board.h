@@ -15,4 +15,10 @@ public:
 	void drawBoard(sf::RenderWindow& window);
 
 	std::vector<sf::Sprite>& returnVector();
+
+	sf::Sprite& returnTileB();
+
+	sf::Sprite& returnTileW();
+
+	const std::size_t returnBoardSize();
 };
