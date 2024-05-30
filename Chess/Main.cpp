@@ -25,7 +25,10 @@ int main()
 	unsigned int screen_height{ 512 };
 
 
-	sf::RenderWindow window(sf::VideoMode(screen_width, screen_height), "Chess");
+	sf::RenderWindow window(sf::VideoMode(screen_width, screen_height), "Chess", sf::Style::Close);
+
+	// Limit the framerate to 30 frames per second
+	window.setFramerateLimit(30);
 
 	Board board{ static_cast<std::size_t>(8) };
 	Player player{ true };
