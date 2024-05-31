@@ -1086,7 +1086,12 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 				
 				else if (current_owned[j].returnSprite().getGlobalBounds().contains(0 + x, to_up + y))
 				{
-					up_check = true;
+					// since this only simulates and not actual movement, the chosen piece might get checked
+					// check it if the sprite location is the same as chosen
+					if (!(current_owned[j].returnSprite().getPosition() == loc))
+					{
+						up_check = true;
+					}
 				}
 			}
 
@@ -1107,7 +1112,12 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 
 				else if (current_owned[j].returnSprite().getGlobalBounds().contains(0 + x, to_down + y))
 				{
-					down_check = true;
+					// since this only simulates and not actual movement, the chosen piece might get checked
+					// check it if the sprite location is the same as chosen
+					if (!(current_owned[j].returnSprite().getPosition() == loc))
+					{
+						down_check = true;
+					}
 				}
 			}
 
@@ -1128,7 +1138,12 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 				}
 				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_left + x, 0 + y))
 				{
-					left_check = true;
+					// since this only simulates and not actual movement, the chosen piece might get checked
+					// check it if the sprite location is the same as chosen
+					if (!(current_owned[j].returnSprite().getPosition() == loc))
+					{
+						left_check = true;
+					}
 				}
 			}
 
@@ -1146,7 +1161,12 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 				}
 				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_right + x, 0 + y))
 				{
-					right_check = true;
+					// since this only simulates and not actual movement, the chosen piece might get checked
+					// check it if the sprite location is the same as chosen
+					if (!(current_owned[j].returnSprite().getPosition() == loc))
+					{
+						right_check = true;
+					}
 				}
 			}
 
@@ -1170,7 +1190,12 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 				}
 				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_right + x, to_up + y))
 				{
-					diag_topright = true;
+					// since this only simulates and not actual movement, the chosen piece might get checked
+					// check it if the sprite location is the same as chosen
+					if (!(current_owned[j].returnSprite().getPosition() == loc))
+					{
+						diag_topright = true;
+					}
 				}
 			}
 
@@ -1190,7 +1215,12 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 
 				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_left + x, to_up + y))
 				{
-					diag_topleft = true;
+					// since this only simulates and not actual movement, the chosen piece might get checked
+					// check it if the sprite location is the same as chosen
+					if (!(current_owned[j].returnSprite().getPosition() == loc))
+					{
+						diag_topleft = true;
+					}
 				}
 			}
 
@@ -1210,7 +1240,12 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 				}
 				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_right + x, to_down + y))
 				{
-					diag_botright = true;
+					// since this only simulates and not actual movement, the chosen piece might get checked
+					// check it if the sprite location is the same as chosen
+					if (!(current_owned[j].returnSprite().getPosition() == loc))
+					{
+						diag_botright = true;
+					}
 				}
 			}
 
@@ -1230,7 +1265,12 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 				}
 				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_left + x, to_down + y))
 				{
-					diag_botleft = true;
+					// since this only simulates and not actual movement, the chosen piece might get checked
+					// check it if the sprite location is the same as chosen
+					if (!(current_owned[j].returnSprite().getPosition() == loc))
+					{
+						diag_botleft = true;
+					}
 				}
 			}
 
@@ -1862,7 +1902,16 @@ bool GameEvent::findHelper()
 void GameEvent::checkMate()
 {
 	m_checkmate = true;
-	std::cout << "Checkmate";
+
+	// because it will always change turn after movement, reverse the condition
+	if (m_playerturn)
+	{
+		std::cout << "enemy win\n";
+	}
+	else
+	{
+		std::cout << "player win\n";
+	}
 }
 
 bool GameEvent::oneKing()

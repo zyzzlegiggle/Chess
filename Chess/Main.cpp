@@ -1,5 +1,4 @@
 #include <SFML/Graphics.hpp>
-#include "Tile.h"
 #include "Board.h"
 #include "Player.h"
 #include "Enemy.h"
@@ -7,19 +6,8 @@
 #include <iostream>
 
 
-/*
-void resizeHandler(unsigned int& height, unsigned int& width, Board& board)
-{
-
-}
-*/
-
 int main()
 {
-	// get screen size and adjust
-	/*
-	sf::VideoMode desktop{ sf::VideoMode::getDesktopMode() };
-	*/
 
 	unsigned int screen_width{ 512 };
 	unsigned int screen_height{ 512 };
@@ -51,8 +39,6 @@ int main()
 				sf::Vector2u size = window.getSize();
 				screen_height = size.y;
 				screen_width = size.x;
-
-				//resizeHandler(screen_height, screen_width, board);
 			}
 
 			// click a piece
@@ -92,7 +78,7 @@ int main()
 								if (!game.findHelper())
 								{
 									game.checkMate();
-									std::cout << "checkmate";
+									std::cout << "checkmate\n";
 								}
 							}
 							game.choosePiece(event.mouseButton.x, event.mouseButton.y);
