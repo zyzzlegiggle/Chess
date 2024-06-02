@@ -212,6 +212,15 @@ void GameEvent::movePiece(int x, int y)
 		moveKing(x, y, current_owned, rival_owned, loc);
 		break;
 	}
+
+	static sf::SoundBuffer buffer;
+	buffer.loadFromFile("sound/moving.mp3");
+
+	static sf::Sound moving;
+	if (moving.getBuffer() == nullptr)
+	{
+		moving.setBuffer(buffer);
+	}
 	
 	// if player do a wrong move (clicking random tiles) 
 	// stay at player turn
@@ -224,7 +233,7 @@ void GameEvent::movePiece(int x, int y)
 	else
 	{
 		m_playerturn = !m_playerturn;
-
+		moving.play();
 		// reset the chosen sprite to be inactive
 		m_chosen->setActive(false);
 		m_chosen = nullptr;
@@ -1930,6 +1939,18 @@ void GameEvent::checkMate()
 {
 	m_checkmate = true;
 
+	static sf::SoundBuffer buffer;
+
+	buffer.loadFromFile("sound/checkmate.mp3");
+
+	static sf::Sound sound;
+	if (sound.getBuffer() == nullptr)
+	{
+		sound.setBuffer(buffer);
+	}
+	
+	sound.play();
+
 	// because it will always change turn after movement, reverse the condition
 	if (m_playerturn)
 	{
@@ -1990,4 +2011,6 @@ void GameEvent::showCheckmate()
 	s.setPosition(-85, 215);
 
 	m_window.draw(s);
+
+	
 }

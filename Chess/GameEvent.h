@@ -5,6 +5,7 @@
 #include "ChessPiece.h"
 #include <algorithm>
 #include <memory>
+#include <SFML/Audio.hpp>
 
 class GameEvent
 {

@@ -65,6 +65,7 @@ int main()
 						else if (game.isChosen())
 						{
 							game.movePiece(event.mouseButton.x, event.mouseButton.y);
+
 						}
 						else
 						{
