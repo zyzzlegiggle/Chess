@@ -61,9 +61,11 @@ void ChessPiece::updateSprite(ColorType color, PieceType piece)
 	}
 	else
 	{
+		
 		m_sprite.setTexture(m_texture);
 		m_sprite.scale(0.5f, 0.5f);
 		m_sprite.setOrigin(m_sprite.getLocalBounds().width / 2, m_sprite.getLocalBounds().height / 2);
+			
 	}
 
 
@@ -108,6 +110,72 @@ void ChessPiece::resetSprite()
 {
 	m_sprite.setScale(0.5f, 0.5f);
 	m_sprite.setOrigin(m_sprite.getLocalBounds().width / 2, m_sprite.getLocalBounds().height / 2);
+}
+
+// always call this function with false argument before assigning m_chosen to nullptr
+void ChessPiece::setActive(bool is_active)
+{
+	static sf::Texture active;
+	std::string filename{};
+
+	if (m_color == ColorType::BLACK)
+	{
+		switch (m_piece)
+		{
+		case ChessPiece::PieceType::PAWN:
+			filename = "chessimages/active_b_pawn_png_shadow_128px.png";
+			break;
+		case ChessPiece::PieceType::ROOK:
+			filename = "chessimages/active_b_rook_png_shadow_128px.png";
+			break;
+		case ChessPiece::PieceType::KNIGHT:
+			filename = "chessimages/active_b_knight_png_shadow_128px.png";
+			break;
+		case ChessPiece::PieceType::BISHOP:
+			filename = "chessimages/active_b_bishop_png_shadow_128px.png";
+			break;
+		case ChessPiece::PieceType::KING:
+			filename = "chessimages/active_b_king_png_shadow_128px.png";
+			break;
+		case ChessPiece::PieceType::QUEEN:
+			filename = "chessimages/active_b_queen_png_shadow_128px.png";
+			break;
+		}
+	}
+	else if (m_color == ColorType::WHITE)
+	{
+		switch (m_piece)
+		{
+		case ChessPiece::PieceType::PAWN:
+			filename = "chessimages/active_w_pawn_png_shadow_128px.png";
+			break;
+		case ChessPiece::PieceType::ROOK:
+			filename = "chessimages/active_w_rook_png_shadow_128px.png";
+			break;
+		case ChessPiece::PieceType::KNIGHT:
+			filename = "chessimages/active_w_knight_png_shadow_128px.png";
+			break;
+		case ChessPiece::PieceType::BISHOP:
+			filename = "chessimages/active_w_bishop_png_shadow_128px.png";
+			break;
+		case ChessPiece::PieceType::KING:
+			filename = "chessimages/active_w_king_png_shadow_128px.png";
+			break;
+		case ChessPiece::PieceType::QUEEN:
+			filename = "chessimages/active_w_queen_png_shadow_128px.png";
+			break;
+		
+		}
+	}
+	if (is_active)
+	{
+		active.loadFromFile(filename);
+		m_sprite.setTexture(active);
+	}
+	else
+	{
+		m_sprite.setTexture(m_texture);
+	}
 }
 
 void ChessPiece::draw(sf::RenderTarget& target, sf::RenderStates states) const

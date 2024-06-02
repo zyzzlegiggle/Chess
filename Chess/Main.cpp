@@ -106,6 +106,11 @@ int main()
  			game.promotionCheck();
 		}
 
+		if (game.isCheckmate())
+		{
+			game.showCheckmate();
+		}
+
 		window.display();
 	}
 }

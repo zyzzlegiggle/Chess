@@ -4,8 +4,8 @@ Board::Board(std::size_t row)
 	: m_boardsize{ row }
 {
 	m_board.resize(row * row);
-	m_black.loadFromFile("chessimages/square_brown_dark_png_shadow_128px.png");
-	m_white.loadFromFile("chessimages/square_brown_light_png_shadow_128px.png");
+	m_black.loadFromFile("chessimages/square_gray_dark_png_shadow_128px.png");
+	m_white.loadFromFile("chessimages/square_gray_light_png_shadow_128px.png");
 
 	m_boxB.setTexture(m_black);
 	m_boxW.setTexture(m_white);

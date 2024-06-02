@@ -25,7 +25,7 @@ private:
 	std::vector<ChessPiece> m_choices; // choices for pawn promotion
 
 	// last eaten piece for recovery in movingAction eatEnemy
-	// put it in eatEnemy the recover in movingAction to prevent blind eating
+	// put it in eatEnemy to recover in movingAction to prevent blind eating
 	ChessPiece* m_eaten = nullptr;
 public:
 	GameEvent(Player& player, Board& board, Enemy& enemy, sf::RenderWindow& window);
@@ -103,5 +103,7 @@ public:
 	const bool isStale();
 
 	const bool isCheckmate();
+
+	void showCheckmate();
 };
 

@@ -56,5 +56,7 @@ public:
 
 	void resetSprite();
 
+	void setActive(bool is_active);
+
 	virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const;
 };

@@ -122,6 +122,7 @@ void GameEvent::choosePiece(int x, int y)
 		if (piece.returnSprite().getGlobalBounds().contains(x, y))
 		{
 			m_chosen = &piece;
+			m_chosen->setActive(true);
 			break;
 		}
 		else
@@ -223,6 +224,9 @@ void GameEvent::movePiece(int x, int y)
 	else
 	{
 		m_playerturn = !m_playerturn;
+
+		// reset the chosen sprite to be inactive
+		m_chosen->setActive(false);
 		m_chosen = nullptr;
 	}
 	
@@ -997,15 +1001,6 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 		int to_right{ 64 + i };
 		int to_left{ -64 - i };
 
-		// this probably prevent the chosen piece to be checked
-		/*
-		if ((x - loc.x == to_right || x - loc.x == to_left)
-			&& (y - loc.y == to_up || y - loc.y == to_down))
-		{
-			continue;
-		}
-		*/
-
 		for (std::size_t j{ 0 }; j < rival_owned.size(); j++)
 		{
 
@@ -1367,6 +1362,7 @@ void GameEvent::movingAction(int x, int y, bool not_blocked, std::vector<ChessPi
 				if (m_check)
 				{
 					m_chosen->returnSprite().move(-x, -y); // revert if king is still in check
+					m_chosen->setActive(false);
 					m_chosen = nullptr;
 				}
 			}
@@ -1384,6 +1380,8 @@ void GameEvent::movingAction(int x, int y, bool not_blocked, std::vector<ChessPi
 					m_eaten->isMovable() = true;
 
 					m_eaten = nullptr;
+
+					m_chosen->setActive(false);
 					m_chosen = nullptr;
 				}
 			}
@@ -1396,11 +1394,13 @@ void GameEvent::movingAction(int x, int y, bool not_blocked, std::vector<ChessPi
 				if (m_check)
 				{
 					m_chosen->returnSprite().move(-x, -y); // revert if king is still in check
+					m_chosen->setActive(false);
 					m_chosen = nullptr;
 				}
 			}
 			else
 			{
+				m_chosen->setActive(false);
 				m_chosen = nullptr;
 			}
 		}
@@ -1421,6 +1421,7 @@ void GameEvent::movingAction(int x, int y, bool not_blocked, std::vector<ChessPi
 				if (m_check)
 				{
 					m_chosen->returnSprite().move(-x, -y);
+					m_chosen->setActive(false);
 					m_chosen = nullptr;
 				}
 			}
@@ -1428,15 +1429,29 @@ void GameEvent::movingAction(int x, int y, bool not_blocked, std::vector<ChessPi
 	}
 	else
 	{
-		m_chosen = nullptr;
+		if (m_chosen != nullptr)
+		{
+			m_chosen->setActive(false);
+			m_chosen = nullptr;
+		}
+		
 	}
 	
 }
 
 void GameEvent::promotionCheck()
 {
+	sf::Texture t;
+	sf::Sprite text;
+
+	t.loadFromFile("chessimages/promotion.png");
+
+	text.setTexture(t);
+	text.setPosition(-95, 150);
+	m_window.draw(text);
 	ChessPiece rook, bishop, queen, knight, pawn;
 	ChessPiece::ColorType color{};
+
 
 	if (m_playerturn)
 	{
@@ -1455,11 +1470,20 @@ void GameEvent::promotionCheck()
 
 	m_choices = { rook, bishop, queen, knight, pawn };
 
-	int pos_x{ 32 };
-	int pos_y{ 256 };
+	sf::Texture box;
+	sf::Sprite promobox;
+
+	box.loadFromFile("chessimages/promobox.png");
+	promobox.setTexture(box);
+	promobox.setOrigin(promobox.getLocalBounds().width / 2, promobox.getLocalBounds().height / 2);
+
+	int pos_x{ 60 };
+	int pos_y{ 275 };
 	for (ChessPiece& s : m_choices)
 	{
+		promobox.setPosition(pos_x, pos_y);
 		s.returnSprite().setPosition(pos_x, pos_y);
+		m_window.draw(promobox);
 		m_window.draw(s);
 		pos_x += 96;
 	}
@@ -1484,6 +1508,7 @@ void GameEvent::choosePromotion(int x, int y)
 
 			// change turn and reset chosen
 			m_playerturn = !m_playerturn;
+			m_chosen->setActive(false);
 			m_chosen = nullptr;
 			break;
 		}
@@ -1584,7 +1609,7 @@ bool GameEvent::findHelper()
 	std::vector<ChessPiece>& rival_owned{ (m_playerturn) ? enemy_owned : player_owned };
 
 	sf::Vector2f loc;
-	int x, y; // to reverse the movement at end of function
+	int x{}, y{}; // to reverse the movement at end of function
 	for (ChessPiece& p : current_owned)
 	{
 		m_chosen = &p;
@@ -1893,8 +1918,10 @@ bool GameEvent::findHelper()
 		if (m_chosen != nullptr)
 		{
 			m_chosen->returnSprite().move(-x, -y);
+			m_chosen->setActive(false);
+			m_chosen = nullptr;
 		}
-		m_chosen = nullptr;
+		
 		return true;
 	}
 }
@@ -1946,4 +1973,21 @@ const bool GameEvent::isStale()
 const bool GameEvent::isCheckmate()
 {
 	return m_checkmate;
+}
+
+void GameEvent::showCheckmate()
+{
+	sf::Texture t;
+	sf::Sprite s;
+
+	if (!t.loadFromFile("chessimages/CHECKMATE.png"))
+	{
+		std::cout << "failed load checkmate";
+	}
+
+	s.setTexture(t);
+
+	s.setPosition(-85, 215);
+
+	m_window.draw(s);
 }
