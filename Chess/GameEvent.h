@@ -113,5 +113,9 @@ public:
 	void enemyMove();
 
 	bool outOfBoundaries(int x, int y, sf::Vector2f& loc);
+
+	int enemyMoveCalc(int x, int y, sf::Vector2f& loc);
+
+	void checkPieceType(ChessPiece::PieceType& p, int& points);
 };
 

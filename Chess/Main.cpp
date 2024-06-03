@@ -30,8 +30,26 @@ int main()
 		// check all the window's events that were triggered since the last iteration of the loop
 		sf::Event event;
 
+		game.checkSeeker();
+		game.staleCheck();
+		if (game.enemyTurn())
+		{
+			if (game.oneKing())
+			{
+				game.checkMate();
+			}
+			else if (game.isStale())
+			{
+				// makes m_chosen null, if outside, will stuck at !isChosen()
+				if (!game.findHelper())
+				{
+					game.checkMate();
+					std::cout << "checkmate\n";
+				}
+			}
+			game.enemyMove();
+		}
 		
-		game.enemyMove(); 
 
 		while (window.pollEvent(event))
 		{
@@ -44,11 +62,6 @@ int main()
 					std::cout << "the right button was pressed" << std::endl;
 					std::cout << "mouse x: " << event.mouseButton.x << std::endl;
 					std::cout << "mouse y: " << event.mouseButton.y << std::endl;
-
-					game.checkSeeker();
-					game.staleCheck();
-					
-					
 
 					if (!game.isCheckmate())
 					{

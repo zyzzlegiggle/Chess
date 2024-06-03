@@ -165,7 +165,7 @@ void GameEvent::movePiece(int x, int y)
 	std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
 	std::vector<ChessPiece>& rival_owned{ (m_playerturn) ? enemy_owned : player_owned };
 
-	sf::Vector2f loc{ m_chosen->returnSprite().getPosition() };
+	sf::Vector2f loc{ m_chosen->getPosition() };
 
 	
 	if (!((x % 64 == 0) && (y % 64 == 0)))
@@ -631,9 +631,9 @@ bool GameEvent::pieceBlocked(int x, int y, std::vector<ChessPiece>& current_owne
 	for (std::size_t i{ 0 }; i < current_owned.size(); i++)
 	{
 		if (current_owned[i].returnSprite().getGlobalBounds().
-			contains(x + m_chosen->returnSprite().getPosition().x, y + m_chosen->returnSprite().getPosition().y) ||
+			contains(x + m_chosen->getPosition().x, y + m_chosen->getPosition().y) ||
 			rival_owned[i].returnSprite().getGlobalBounds().
-			contains(x + m_chosen->returnSprite().getPosition().x, y + m_chosen->returnSprite().getPosition().y))
+			contains(x + m_chosen->getPosition().x, y + m_chosen->getPosition().y))
 		{
 			return true;
 		}
@@ -648,7 +648,7 @@ bool GameEvent::pieceBlocked(int x, int y, std::vector<ChessPiece>& current_owne
 	for (ChessPiece& p : current_owned)
 	{
 		if (p.returnSprite().getGlobalBounds().
-			contains(x + m_chosen->returnSprite().getPosition().x, y + m_chosen->returnSprite().getPosition().y))
+			contains(x + m_chosen->getPosition().x, y + m_chosen->getPosition().y))
 		{
 			return true;
 		}
@@ -693,7 +693,7 @@ bool GameEvent::eatEnemy(int x, int y, std::vector<ChessPiece>& rival_owned)
 	for (std::size_t i{ 0 }; i < rival_owned.size(); i++)
 	{
 		if (rival_owned[i].returnSprite().getGlobalBounds().
-			contains(x + m_chosen->returnSprite().getPosition().x, y + m_chosen->returnSprite().getPosition().y))
+			contains(x + m_chosen->getPosition().x, y + m_chosen->getPosition().y))
 		{
 			rival_owned[i].returnSprite().setPosition(600, 500);
 			rival_owned[i].isMovable() = false;
@@ -710,8 +710,8 @@ bool GameEvent::castlingMove(int rook_x, int rook_y, std::vector<ChessPiece>& cu
 {
 	for (auto& p : current_owned)
 	{
-		if (p.returnSprite().getPosition().x == rook_x &&
-			p.returnSprite().getPosition().y == rook_y &&
+		if (p.getPosition().x == rook_x &&
+			p.getPosition().y == rook_y &&
 			p.returnPieceType() == ChessPiece::PieceType::ROOK)
 		{
 			p.returnSprite().move(offsetX, 0);
@@ -975,7 +975,7 @@ void GameEvent::checkSeeker()
 						break;
 					}
 				}
-					
+
 				else
 				{
 					// bottom right and left
@@ -988,7 +988,7 @@ void GameEvent::checkSeeker()
 						pawn_check = true;
 						break;
 					}
-					
+
 				}
 			}
 		}
@@ -997,9 +997,9 @@ void GameEvent::checkSeeker()
 
 // function to check any potential threats if move to x, y position
 // loc is used for king purposes only
-bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSprite().getPosition();*/)
+bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->getPosition();*/)
 {
-	
+
 	std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
 	std::vector<ChessPiece>& rival_owned{ (m_playerturn) ? enemy_owned : player_owned };
 
@@ -1037,6 +1037,22 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 			{
 				if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::KING)
 				{
+					const int offsets_x[] = { 0, 64, -64 };
+					const int offsets_y[] = { 0,64, -64 };
+
+					for (int off_x : offsets_x)
+					{
+						for (int off_y : offsets_y)
+						{
+							if (rival_owned[j].returnSprite().
+								getGlobalBounds().contains(off_x + x, off_y + y))
+							{
+								return true;
+							}
+						}
+					}
+					king_check = true;
+					/*
 					if (rival_owned[j].returnSprite().
 						getGlobalBounds().contains(0 + x, -64 + y))
 					{
@@ -1077,10 +1093,7 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 					{
 						return true;
 					}
-					else
-					{
-						king_check = true;
-					}
+					*/
 				}
 			}
 
@@ -1104,7 +1117,7 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 				{
 					// since this only simulates and not actual movement, the chosen piece might get checked
 					// check it if the sprite location is the same as chosen
-					if (!(current_owned[j].returnSprite().getPosition() == loc))
+					if (!(current_owned[j].getPosition() == loc))
 					{
 						up_check = true;
 					}
@@ -1130,7 +1143,7 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 				{
 					// since this only simulates and not actual movement, the chosen piece might get checked
 					// check it if the sprite location is the same as chosen
-					if (!(current_owned[j].returnSprite().getPosition() == loc))
+					if (!(current_owned[j].getPosition() == loc))
 					{
 						down_check = true;
 					}
@@ -1156,7 +1169,7 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 				{
 					// since this only simulates and not actual movement, the chosen piece might get checked
 					// check it if the sprite location is the same as chosen
-					if (!(current_owned[j].returnSprite().getPosition() == loc))
+					if (!(current_owned[j].getPosition() == loc))
 					{
 						left_check = true;
 					}
@@ -1179,7 +1192,7 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 				{
 					// since this only simulates and not actual movement, the chosen piece might get checked
 					// check it if the sprite location is the same as chosen
-					if (!(current_owned[j].returnSprite().getPosition() == loc))
+					if (!(current_owned[j].getPosition() == loc))
 					{
 						right_check = true;
 					}
@@ -1208,7 +1221,7 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 				{
 					// since this only simulates and not actual movement, the chosen piece might get checked
 					// check it if the sprite location is the same as chosen
-					if (!(current_owned[j].returnSprite().getPosition() == loc))
+					if (!(current_owned[j].getPosition() == loc))
 					{
 						diag_topright = true;
 					}
@@ -1233,7 +1246,7 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 				{
 					// since this only simulates and not actual movement, the chosen piece might get checked
 					// check it if the sprite location is the same as chosen
-					if (!(current_owned[j].returnSprite().getPosition() == loc))
+					if (!(current_owned[j].getPosition() == loc))
 					{
 						diag_topleft = true;
 					}
@@ -1258,7 +1271,7 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 				{
 					// since this only simulates and not actual movement, the chosen piece might get checked
 					// check it if the sprite location is the same as chosen
-					if (!(current_owned[j].returnSprite().getPosition() == loc))
+					if (!(current_owned[j].getPosition() == loc))
 					{
 						diag_botright = true;
 					}
@@ -1283,7 +1296,7 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->returnSp
 				{
 					// since this only simulates and not actual movement, the chosen piece might get checked
 					// check it if the sprite location is the same as chosen
-					if (!(current_owned[j].returnSprite().getPosition() == loc))
+					if (!(current_owned[j].getPosition() == loc))
 					{
 						diag_botleft = true;
 					}
@@ -1358,7 +1371,7 @@ sf::Vector2f GameEvent::findKingLoc()
 	{
 		if (k.returnPieceType() == ChessPiece::PieceType::KING)
 		{
-			return k.returnSprite().getPosition();
+			return k.getPosition();
 		}
 	}
 }
@@ -1396,7 +1409,7 @@ void GameEvent::movingAction(int x, int y, bool not_blocked, std::vector<ChessPi
 					m_chosen->returnSprite().move(-x, -y); // revert if king is still in check
 
 					// enemy recovery
-					sf::Vector2f loc{ m_chosen->returnSprite().getPosition() };
+					sf::Vector2f loc{ m_chosen->getPosition() };
 					m_eaten->returnSprite().setPosition(x + loc.x, y + loc.y);
 					m_eaten->isMovable() = true;
 
@@ -1634,7 +1647,7 @@ bool GameEvent::findHelper()
 	for (ChessPiece& p : current_owned)
 	{
 		m_chosen = &p;
-		loc = m_chosen->returnSprite().getPosition();
+		loc = m_chosen->getPosition();
 
 		if (!m_chosen->isMovable())
 		{
@@ -2046,26 +2059,30 @@ bool GameEvent::enemyTurn()
 
 void GameEvent::enemyMove()
 {
-	if (!m_playerturn)
-	{
-		sf::sleep(sf::seconds(1));
-	}
+	sf::sleep(sf::seconds(1));
 
 	while (!m_playerturn)
 	{
+		int points{};
+		int calc{};
+		ChessPiece* p = nullptr;
 		
+		// store the x and y of largest point of chesspiece to be moved later
+		int move_x{}, move_y{};
+
 		std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
 
 		// randomize pick
-		int index{ Random::get(0, 15)};
+		int index{ Random::get(0, 5)};
 		
-		m_chosen = &current_owned[index];
+		m_chosen = &current_owned[0];
 
 		if (!m_chosen->isMovable())
 		{
 			continue;
 		}
-
+		
+		sf::Vector2f loc{ m_chosen->getPosition() };
 		
 		
 		switch (m_chosen->returnPieceType())
@@ -2076,22 +2093,46 @@ void GameEvent::enemyMove()
 			const int onetile{ 64 };
 			const int offsets_x[] = { 64, -64, 0 };
 
-			movePiece(0, twotile);
+			//movePiece(0, twotile);
+
+			calc = enemyMoveCalc(0, twotile, loc);
+			if (calc >= points)
+			{
+				points = calc;
+				p = m_chosen;
+				move_x = 0, move_y = twotile;
+			}
+
+			for (int x : offsets_x)
+			{
+				m_chosen = &current_owned[0];
+				calc = enemyMoveCalc(x, onetile, loc);
+				if (calc >= points)
+				{
+					points = calc;
+					p = m_chosen;
+					move_x = x, move_y = onetile;
+				}
+			}
+
 			// still at the same turn means movement not succeeded
+			/*
 			if (!m_playerturn)
 			{
 				for (int x : offsets_x)
 				{
+
 					if (!m_playerturn)
 					{
 						m_chosen = &current_owned[index];
 						movePiece(x, onetile);
 					}
-				}		
+				}
 			}
+			*/
 			break;
 		}
-		
+		/*
 		case ChessPiece::PieceType::KNIGHT:
 		{
 			bool L1, L2, L3, L4, L5, L6, L7, L8;
@@ -2205,7 +2246,7 @@ void GameEvent::enemyMove()
 				{
 					break;
 				}
-				
+
 			}
 			break;
 		}
@@ -2354,7 +2395,7 @@ void GameEvent::enemyMove()
 			}
 			break;
 		}
-		
+
 		case ChessPiece::PieceType::KING:
 		{
 			const int offsets_x[] = { 128, -128, 0, -64, 64 };
@@ -2375,8 +2416,11 @@ void GameEvent::enemyMove()
 					}
 				}
 			}
+		}*/
 		}
-		}
+
+		m_chosen = p;
+		movePiece(move_x, move_y);
 	}
 }
 
@@ -2391,4 +2435,453 @@ bool GameEvent::outOfBoundaries(int x, int y, sf::Vector2f& loc)
 	}
 
 	return false;
+}
+
+// function to predict best piece to move using points
+// returns points
+int GameEvent::enemyMoveCalc(int x, int y, sf::Vector2f& loc)
+{
+	int points{};
+
+	std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
+	std::vector<ChessPiece>& rival_owned{ (m_playerturn) ? enemy_owned : player_owned };
+
+	int afterpos_x{ static_cast<int>(x + loc.x) };
+	int afterpos_y{ static_cast<int>(y + loc.y) };
+	// some bool checks
+	/*
+	bool up_check{false}, down_check{false}, left_check{false},
+		right_check{ false }, diag_topright{ false }, diag_topleft{ false },
+		diag_botright{ false }, diag_botleft{ false }, horizontal_L{ false }, vertical_L{ false },
+		pawn_check{ false }, king_check{ false };
+	*/
+
+	// check blocking pieces in front, back, left, right, diagonal
+
+	// checks here are executed once if a piece exist
+	// if there is a piece not rook/queen in front of king, front check wont be done again
+	// also check current side as well if blocked
+	for (int i{ 0 }; i <= 512; i += 64)
+	{
+		int to_down{ 64 + i };
+		int to_up{ -64 - i };
+		int to_right{ 64 + i };
+		int to_left{ -64 - i };
+
+		for (std::size_t j{ 0 }; j < rival_owned.size(); j++)
+		{
+			ChessPiece::PieceType type{ rival_owned[j].returnPieceType() };
+
+			// default like eating
+			if (rival_owned[j].returnSprite().getGlobalBounds().contains(afterpos_x, afterpos_y))
+			{
+				checkPieceType(type, points);
+			}
+			else
+			{
+				switch (m_chosen->returnPieceType())
+				{
+				case ChessPiece::PieceType::PAWN:
+				{
+					// double move attempt if not in starting position
+					if (loc.y != 96 && y == 128)
+					{
+						return 0;
+					}
+
+					if (rival_owned[j].returnSprite().getGlobalBounds().
+						contains(64 + afterpos_x, 64 + afterpos_y))
+					{
+						checkPieceType(type, points);
+					}
+					if (rival_owned[j].returnSprite().getGlobalBounds().
+						contains(-64 + afterpos_x, 64 + afterpos_y))
+					{
+						checkPieceType(type, points);
+					}
+				}
+				}
+			}
+			
+
+			// default movement if there is piece blocking
+			/*
+			if (current_owned[j].returnSprite().getGlobalBounds().contains(0 + x, 0 + y))
+			{
+				return true;
+			}
+			*/
+
+			// king check
+			/*
+			if (!king_check)
+			{
+				if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::KING)
+				{
+					const int offsets_x[] = { 0, 64, -64 };
+					const int offsets_y[] = { 0,64, -64 };
+
+					for (int off_x : offsets_x)
+					{
+						for (int off_y : offsets_y)
+						{
+							if (rival_owned[j].returnSprite().
+								getGlobalBounds().contains(off_x + x, off_y + y))
+							{
+								
+							}
+						}
+					}
+					king_check = true;
+					/*
+					if (rival_owned[j].returnSprite().
+						getGlobalBounds().contains(0 + x, -64 + y))
+					{
+						return true;
+					}
+					else if (rival_owned[j].returnSprite().
+						getGlobalBounds().contains(0 + x, 64 + y))
+					{
+						return true;
+					}
+					else if (rival_owned[j].returnSprite().
+						getGlobalBounds().contains(64 + x, 0 + y))
+					{
+						return true;
+					}
+					else if (rival_owned[j].returnSprite().
+						getGlobalBounds().contains(-64 + x, 0 + y))
+					{
+						return true;
+					}
+					else if (rival_owned[j].returnSprite().
+						getGlobalBounds().contains(64 + x, 64 + y))
+					{
+						return true;
+					}
+					else if (rival_owned[j].returnSprite().
+						getGlobalBounds().contains(64 + x, -64 + y))
+					{
+						return true;
+					}
+					else if (rival_owned[j].returnSprite().
+						getGlobalBounds().contains(-64 + x, 64 + y))
+					{
+						return true;
+					}
+					else if (rival_owned[j].returnSprite().
+						getGlobalBounds().contains(-64 + x, -64 + y))
+					{
+						return true;
+					}
+					
+				}
+			}
+			
+
+			// vertical
+
+			// up
+			if (!up_check)
+			{
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(0 + x, to_up + y))
+				{
+					if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::ROOK)
+					{
+						points = static_cast<int>(EnemyRank::ROOK);
+					}
+					if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					up_check = true;
+				}
+
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(0 + x, to_up + y))
+				{
+					// since this only simulates and not actual movement, the chosen piece might get checked
+					// check it if the sprite location is the same as chosen
+					if (!(current_owned[j].getPosition() == loc))
+					{
+						up_check = true;
+					}
+				}
+			}
+
+
+			// down
+			if (!down_check)
+			{
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(0 + x, to_down + y))
+				{
+					if ((rival_owned[j].returnPieceType() == ChessPiece::PieceType::ROOK ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN))
+					{
+						return true;
+
+					}
+					down_check = true;
+				}
+
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(0 + x, to_down + y))
+				{
+					// since this only simulates and not actual movement, the chosen piece might get checked
+					// check it if the sprite location is the same as chosen
+					if (!(current_owned[j].getPosition() == loc))
+					{
+						down_check = true;
+					}
+				}
+			}
+
+			// horizontal
+
+			// left
+			if (!left_check)
+			{
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_left + x, 0 + y))
+				{
+					if ((rival_owned[j].returnPieceType() == ChessPiece::PieceType::ROOK ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN))
+					{
+						return true;
+
+					}
+					left_check = true;
+				}
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_left + x, 0 + y))
+				{
+					// since this only simulates and not actual movement, the chosen piece might get checked
+					// check it if the sprite location is the same as chosen
+					if (!(current_owned[j].getPosition() == loc))
+					{
+						left_check = true;
+					}
+				}
+			}
+
+			// right
+			if (!right_check)
+			{
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_right + x, 0 + y))
+				{
+					if ((rival_owned[j].returnPieceType() == ChessPiece::PieceType::ROOK ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN))
+					{
+						return true;
+					}
+					right_check = true;
+				}
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_right + x, 0 + y))
+				{
+					// since this only simulates and not actual movement, the chosen piece might get checked
+					// check it if the sprite location is the same as chosen
+					if (!(current_owned[j].getPosition() == loc))
+					{
+						right_check = true;
+					}
+				}
+			}
+
+
+			// diagonal
+			// check for enemy pawn first
+
+			// top right
+			if (!diag_topright)
+			{
+
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_right + x, to_up + y))
+				{
+					if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					{
+						return true;
+
+					}
+					diag_topright = true;
+				}
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_right + x, to_up + y))
+				{
+					// since this only simulates and not actual movement, the chosen piece might get checked
+					// check it if the sprite location is the same as chosen
+					if (!(current_owned[j].getPosition() == loc))
+					{
+						diag_topright = true;
+					}
+				}
+			}
+
+			// top left
+			if (!diag_topleft)
+			{
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_left + x, to_up + y))
+				{
+					if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					{
+						return true;
+
+					}
+					diag_topleft = true;
+				}
+
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_left + x, to_up + y))
+				{
+					// since this only simulates and not actual movement, the chosen piece might get checked
+					// check it if the sprite location is the same as chosen
+					if (!(current_owned[j].getPosition() == loc))
+					{
+						diag_topleft = true;
+					}
+				}
+			}
+
+
+			// bottom right
+			if (!diag_botright)
+			{
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_right + x, to_down + y))
+				{
+					if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					{
+						return true;
+
+					}
+					diag_botright = true;
+				}
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_right + x, to_down + y))
+				{
+					// since this only simulates and not actual movement, the chosen piece might get checked
+					// check it if the sprite location is the same as chosen
+					if (!(current_owned[j].getPosition() == loc))
+					{
+						diag_botright = true;
+					}
+				}
+			}
+
+
+			// bottom left
+			if (!diag_botleft)
+			{
+				if (rival_owned[j].returnSprite().getGlobalBounds().contains(to_left + x, to_down + y))
+				{
+					if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::BISHOP ||
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::QUEEN)
+					{
+						return true;
+
+					}
+					diag_botleft = true;
+				}
+				else if (current_owned[j].returnSprite().getGlobalBounds().contains(to_left + x, to_down + y))
+				{
+					// since this only simulates and not actual movement, the chosen piece might get checked
+					// check it if the sprite location is the same as chosen
+					if (!(current_owned[j].getPosition() == loc))
+					{
+						diag_botleft = true;
+					}
+				}
+			}
+
+			// knight check
+			if (!horizontal_L)
+			{
+				if (rival_owned[j].returnPieceType() == ChessPiece::PieceType::KNIGHT &&
+					(rival_owned[j].returnSprite().getGlobalBounds().contains(64 + x, 128 + y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(-64 + x, 128 + y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(64 + x, -128 + y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(-64 + x, -128 + y)))
+				{
+					return true;
+				}
+
+			}
+
+			if (!vertical_L)
+			{
+				if ((rival_owned[j].returnPieceType() == ChessPiece::PieceType::KNIGHT) &&
+					(rival_owned[j].returnSprite().getGlobalBounds().contains(128 + x, 64 + y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(-128 + x, 64 + y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(128 + x, -64 + y) ||
+						rival_owned[j].returnSprite().getGlobalBounds().contains(-128 + x, -64 + y)))
+				{
+					return true;
+				}
+			}
+
+			// pawn check
+			if (!pawn_check)
+			{
+				if (m_playerturn)
+				{
+					// top right and left
+					if ((rival_owned[j].returnSprite().getGlobalBounds().contains(64 + x, -64 + y) &&
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::PAWN) ||
+						(rival_owned[j].returnSprite().getGlobalBounds().contains(-64 + x, -64 + y) &&
+							rival_owned[j].returnPieceType() == ChessPiece::PieceType::PAWN))
+					{
+						return true;
+					}
+				}
+
+				else
+				{
+					// bottom right and left
+					if ((rival_owned[j].returnSprite().getGlobalBounds().contains(64 + x, 64 + y) &&
+						rival_owned[j].returnPieceType() == ChessPiece::PieceType::PAWN) ||
+						(rival_owned[j].returnSprite().getGlobalBounds().contains(-64 + x, 64 + y) &&
+							rival_owned[j].returnPieceType() == ChessPiece::PieceType::PAWN))
+					{
+						return true;
+					}
+
+				}
+			}*/
+		}
+	}
+
+	return points;
+}
+
+void GameEvent::checkPieceType(ChessPiece::PieceType& p, int& points)
+{
+	static enum class EnemyRank
+	{
+		PAWN = 1,
+		BISHOP = 2,
+		ROOK = 2,
+		KNIGHT = 2,
+		QUEEN = 3,
+		KING = 4,
+		MAX_RANK
+	};
+
+	switch (p)
+	{
+	case ChessPiece::PieceType::PAWN:
+		points = (points <= static_cast<int>(EnemyRank::PAWN)) ?
+			static_cast<int>(EnemyRank::PAWN) : points;
+		break;
+	case ChessPiece::PieceType::BISHOP:
+		points = (points <= static_cast<int>(EnemyRank::BISHOP)) ?
+			static_cast<int>(EnemyRank::BISHOP) : points;
+		break;
+	case ChessPiece::PieceType::ROOK:
+		points = (points <= static_cast<int>(EnemyRank::ROOK)) ?
+			static_cast<int>(EnemyRank::ROOK) : points;
+		break;
+	case ChessPiece::PieceType::KNIGHT:
+		points = (points <= static_cast<int>(EnemyRank::KNIGHT)) ?
+			static_cast<int>(EnemyRank::KNIGHT) : points;
+		break;
+	case ChessPiece::PieceType::QUEEN:
+		points = (points <= static_cast<int>(EnemyRank::QUEEN)) ?
+			static_cast<int>(EnemyRank::QUEEN) : points;
+		break;
+	case ChessPiece::PieceType::KING:
+		points = (points <= static_cast<int>(EnemyRank::KING)) ?
+			static_cast<int>(EnemyRank::KING) : points;
+		break;
+	}
 }

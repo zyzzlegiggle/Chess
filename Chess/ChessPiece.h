@@ -58,5 +58,10 @@ public:
 
 	void setActive(bool is_active);
 
+	const sf::Vector2f& getPosition()
+	{
+		return m_sprite.getPosition();
+	}
+
 	virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const;
 };
