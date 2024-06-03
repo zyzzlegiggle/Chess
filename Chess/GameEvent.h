@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <memory>
 #include <SFML/Audio.hpp>
+#include "Random.h"
 
 class GameEvent
 {
@@ -106,5 +107,11 @@ public:
 	const bool isCheckmate();
 
 	void showCheckmate();
+
+	bool enemyTurn();
+
+	void enemyMove();
+
+	bool outOfBoundaries(int x, int y, sf::Vector2f& loc);
 };
 

@@ -23,23 +23,18 @@ int main()
 	Enemy enemy{ false };
 	GameEvent game{ player, board, enemy, window};
 
-	// run program as long window is open
 	
-
+	// run program as long window is open
 	while (window.isOpen())
 	{
 		// check all the window's events that were triggered since the last iteration of the loop
 		sf::Event event;
 
+		
+		game.enemyMove(); 
+
 		while (window.pollEvent(event))
 		{
-			// The window was resized
-			if (event.type == sf::Event::Resized)
-			{
-				sf::Vector2u size = window.getSize();
-				screen_height = size.y;
-				screen_width = size.x;
-			}
 
 			// click a piece
 			if (event.type == sf::Event::MouseButtonPressed)
@@ -82,6 +77,7 @@ int main()
 									std::cout << "checkmate\n";
 								}
 							}
+
 							game.choosePiece(event.mouseButton.x, event.mouseButton.y);
 						}
 					}
@@ -111,6 +107,8 @@ int main()
 		{
 			game.showCheckmate();
 		}
+
+		
 
 		window.display();
 	}

@@ -144,13 +144,16 @@ bool GameEvent::isChosen()
 	}
 }
 
-// piece movements
+// if movement not succeeded, stay at current turn
+// else change turns, m_chosen became nullptr
 void GameEvent::movePiece(int x, int y)
 {
 	if (m_chosen == nullptr)
 	{
 		return;
 	}
+
+	
 
 	// check if piece can be moved (not eaten yet)
 	if (!m_chosen->isMovable())
@@ -164,32 +167,31 @@ void GameEvent::movePiece(int x, int y)
 
 	sf::Vector2f loc{ m_chosen->returnSprite().getPosition() };
 
-	// basically find the length from piece to tile
-	for (sf::Sprite& s : board_vector)
+	
+	if (!((x % 64 == 0) && (y % 64 == 0)))
 	{
-		if (s.getGlobalBounds().contains(x, y))
+		// this one for player click the tile
+		// basically find the length from piece to tile
+		for (sf::Sprite& s : board_vector)
 		{
-			// + 32 because chess origin is in middle of sprite
-			// note this
-			x = s.getPosition().x - loc.x + 32;
-			y = s.getPosition().y - loc.y + 32;
-			break;
+			if (s.getGlobalBounds().contains(x, y))
+			{
+				// + 32 because chess origin is in middle of sprite
+				// note this
+				x = s.getPosition().x - loc.x + 32;
+				y = s.getPosition().y - loc.y + 32;
+				break;
+			}
 		}
 	}
 
-	/*
-	if (checkSeeker()
+	// boundaries check
+	if (outOfBoundaries(x, y, loc))
 	{
-		if (m_chosen->returnPieceType() == ChessPiece::PieceType::KING)
-		{
-			moveKing(x, y, current_owned, rival_owned, loc);
-		}
+		m_chosen = nullptr;
+		return;
 	}
-	else
-	{
-		
-	}
-	*/
+	
 	// remember to always return nullptr if wrong move inside particular function
 	switch (m_chosen->returnPieceType())
 	{
@@ -257,7 +259,10 @@ void GameEvent::movePawn(int x, int y, std::vector<ChessPiece>& current_owned,
 			if (y == -128 && first_time) // double move
 			{
 				not_blocked = !pieceBlocked(x, -64, current_owned, rival_owned); // to check one tile back
-				not_blocked = !pieceBlocked(x, y, current_owned, rival_owned);
+				if (not_blocked)
+				{
+					not_blocked = !pieceBlocked(x, y, current_owned, rival_owned);
+				}
 			}
 			else if (y == -64)
 			{
@@ -281,7 +286,11 @@ void GameEvent::movePawn(int x, int y, std::vector<ChessPiece>& current_owned,
 			if (y == 128 && first_time) // double move
 			{
 				not_blocked = !pieceBlocked(x, 64, current_owned, rival_owned); // to check one tile back
-				not_blocked = !pieceBlocked(x, y, current_owned, rival_owned);
+				if (not_blocked)
+				{
+					not_blocked = !pieceBlocked(x, y, current_owned, rival_owned);
+				}
+				
 			}
 			else if (y == 64)
 			{
@@ -435,6 +444,9 @@ void GameEvent::moveRook(int x, int y, std::vector<ChessPiece>& current_owned,
 	std::vector<ChessPiece>& rival_owned, sf::Vector2f& loc)
 {
 	bool not_blocked{ false };
+
+	
+
 	for (int i{ 0 }; i <= 512; i += 64)
 	{
 		int to_down{ 64 + i };
@@ -1642,13 +1654,18 @@ bool GameEvent::findHelper()
 				twotile = -twotile;
 			}
 
-			movePawn(0, onetile, current_owned, rival_owned, loc); 
-			x = 0, y = onetile;
+			movePawn(0, twotile, current_owned, rival_owned, loc); 
+			x = 0, y = twotile;
 			if (m_chosen == nullptr)
 			{
 				m_chosen = &p;
-				movePawn(0, twotile, current_owned, rival_owned, loc);
-				x = 0, y = twotile;
+				movePawn(0, onetile, current_owned, rival_owned, loc);
+				x = 0, y = onetile;
+			}
+
+			if (m_chosen == nullptr)
+			{
+				continue;
 			}
 			break;
 		}
@@ -2013,4 +2030,365 @@ void GameEvent::showCheckmate()
 	m_window.draw(s);
 
 	
+}
+
+bool GameEvent::enemyTurn()
+{
+	if (!m_playerturn)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void GameEvent::enemyMove()
+{
+	if (!m_playerturn)
+	{
+		sf::sleep(sf::seconds(1));
+	}
+
+	while (!m_playerturn)
+	{
+		
+		std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
+
+		// randomize pick
+		int index{ Random::get(0, 15)};
+		
+		m_chosen = &current_owned[index];
+
+		if (!m_chosen->isMovable())
+		{
+			continue;
+		}
+
+		
+		
+		switch (m_chosen->returnPieceType())
+		{
+		case ChessPiece::PieceType::PAWN:
+		{
+			const int twotile{ 128 };
+			const int onetile{ 64 };
+			const int offsets_x[] = { 64, -64, 0 };
+
+			movePiece(0, twotile);
+			// still at the same turn means movement not succeeded
+			if (!m_playerturn)
+			{
+				for (int x : offsets_x)
+				{
+					if (!m_playerturn)
+					{
+						m_chosen = &current_owned[index];
+						movePiece(x, onetile);
+					}
+				}		
+			}
+			break;
+		}
+		
+		case ChessPiece::PieceType::KNIGHT:
+		{
+			bool L1, L2, L3, L4, L5, L6, L7, L8;
+			L1 = L2 = L3 = L4 = L5 = L6 = L7 = L8 = true;
+			for (int i{ 0 }; i < 8; i++)
+			{
+				m_chosen = &current_owned[index];
+				if (L1)
+				{
+					movePiece(64, 128);
+					L1 = (m_playerturn);
+				}
+				else if (L2)
+				{
+					movePiece(64, -128);
+					L2 = (m_playerturn);
+				}
+				else if (L3)
+				{
+					movePiece(-64, 128);
+					L3 = (m_playerturn);
+				}
+				else if (L4)
+				{
+					movePiece(-64, -128);
+					L4 = (m_playerturn);
+				}
+				else if (L5)
+				{
+					movePiece(128, 64);
+					L5 = (m_playerturn);
+				}
+				else if (L6)
+				{
+					movePiece(128, -64);
+					L6 = (m_playerturn);
+				}
+				else if (L7)
+				{
+					movePiece(-128, 64);
+					L7 = (m_playerturn);
+				}
+				else if (L8)
+				{
+					movePiece(-128, -64);
+					L8 = (m_playerturn);
+				}
+
+				if (m_playerturn)
+				{
+					break;
+				}
+			}
+			break;
+		}
+
+		case ChessPiece::PieceType::BISHOP:
+		{
+
+			for (int i{ 0 }; i <= 512; i += 64)
+			{
+				int to_down{ 64 + i };
+				int to_up{ -64 - i };
+				int to_right{ 64 + i };
+				int to_left{ -64 - i };
+				bool diag_topright, diag_topleft, diag_botright, diag_botleft;
+				diag_topright = diag_topleft = diag_botright = diag_botleft = true;
+				m_chosen = &current_owned[index];
+
+				// random pick movement
+				int random{ Random::get(0, 10) };
+				if (random != 3)
+				{
+					continue;
+				}
+				// make sure to move to every possible way before next iteration
+				for (int j{ 0 }; j < 4; j++)
+				{
+					m_chosen = &current_owned[index];
+
+					if (diag_topright)
+					{
+						movePiece(to_right, to_up);
+						diag_topright = (m_playerturn);
+					}
+					else if (diag_topleft)
+					{
+						movePiece(to_left, to_up);
+						diag_topleft = (m_playerturn);
+					}
+					else if (diag_botleft)
+					{
+						movePiece(to_left, to_down);
+						diag_botleft = (m_playerturn);
+					}
+					else if (diag_botright)
+					{
+						movePiece(to_right, to_down);
+						diag_botright = (m_playerturn);
+					}
+
+					// move succeeded
+					if (m_playerturn)
+					{
+						break;
+					}
+				}
+
+				// move succeeded
+				if (m_playerturn)
+				{
+					break;
+				}
+				
+			}
+			break;
+		}
+
+		case ChessPiece::PieceType::QUEEN:
+		{
+			for (int i{ 0 }; i <= 512; i += 64)
+			{
+				int to_down{ 64 + i };
+				int to_up{ -64 - i };
+				int to_right{ 64 + i };
+				int to_left{ -64 - i };
+				bool up, down, left, right, diag_topright,
+					diag_topleft, diag_botright, diag_botleft;
+				up = down = left = right =
+					diag_topright = diag_topleft =
+					diag_botright = diag_botleft = true;
+				m_chosen = &current_owned[index];
+
+				// random pick movement
+				int random{ Random::get(0, 10) };
+				if (random != 3)
+				{
+					continue;
+				}
+
+				// make sure to move to every possible way before next iteration
+				for (int j{ 0 }; j < 8; j++)
+				{
+					m_chosen = &current_owned[index];
+
+					if (up)
+					{
+						movePiece(0, to_up);
+						up = (m_playerturn);
+					}
+					else if (down)
+					{
+						movePiece(0, to_down);
+						down = (m_playerturn);
+					}
+					else if (left)
+					{
+						movePiece(to_left, 0);
+						left = (m_playerturn);
+					}
+					else if (right)
+					{
+						movePiece(to_right, 0);
+						right = (m_playerturn);
+					}
+					else if (diag_topright)
+					{
+						movePiece(to_right, to_up);
+						diag_topright = (m_playerturn);
+					}
+					else if (diag_topleft)
+					{
+						movePiece(to_left, to_up);
+						diag_topleft = (m_playerturn);
+					}
+					else if (diag_botleft)
+					{
+						movePiece(to_left, to_down);
+						diag_botleft = (m_playerturn);
+					}
+					else if (diag_botright)
+					{
+						movePiece(to_right, to_down);
+						diag_botright = (m_playerturn);
+					}
+
+					// move succeeded
+					if (m_playerturn)
+					{
+						break;
+					}
+				}
+
+				// move succeeded
+				if (m_playerturn)
+				{
+					break;
+				}
+			}
+			break;
+		}
+
+		case ChessPiece::PieceType::ROOK:
+		{
+			for (int i{ 0 }; i <= 512; i += 64)
+			{
+				int to_down{ 64 + i };
+				int to_up{ -64 - i };
+				int to_right{ 64 + i };
+				int to_left{ -64 - i };
+				bool up, down, left, right;
+				up = down = left = right = true;
+				m_chosen = &current_owned[index];
+
+				// random pick movement
+				int random{ Random::get(0, 10) };
+				if (random != 3)
+				{
+					continue;
+				}
+
+				// make sure to move to every possible way before next iteration
+				for (int j{ 0 }; j < 4; j++)
+				{
+					m_chosen = &current_owned[index];
+
+					if (up)
+					{
+						movePiece(0, to_up);
+						up = (m_playerturn);
+					}
+					else if (down)
+					{
+						movePiece(0, to_down);
+						down = (m_playerturn);
+					}
+					else if (left)
+					{
+						movePiece(to_left, 0);
+						left = (m_playerturn);
+					}
+					else if (right)
+					{
+						movePiece(to_right, 0);
+						right = (m_playerturn);
+					}
+
+					// move succeeded
+					if (m_playerturn)
+					{
+						break;
+					}
+				}
+
+				// move succeeded
+				if (m_playerturn)
+				{
+					break;
+				}
+			}
+			break;
+		}
+		
+		case ChessPiece::PieceType::KING:
+		{
+			const int offsets_x[] = { 128, -128, 0, -64, 64 };
+			const int offsets_y[] = { 0, -64, 64 };
+
+			for (int x : offsets_x)
+			{
+				for (int y : offsets_y)
+				{
+					if (!m_playerturn)
+					{
+						m_chosen = &current_owned[index];
+						movePiece(x, y);
+					}
+					else
+					{
+						break;
+					}
+				}
+			}
+		}
+		}
+	}
+}
+
+bool GameEvent::outOfBoundaries(int x, int y, sf::Vector2f& loc)
+{
+	int pos_x{ static_cast<int>(x + loc.x) };
+	int pos_y{ static_cast<int>(y + loc.y) };
+
+	if ((pos_x > 480 || pos_x < 0) || (pos_y > 480 || pos_y < 0 ))
+	{
+		return true;
+	}
+
+	return false;
 }
