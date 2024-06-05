@@ -116,6 +116,12 @@ public:
 
 	int enemyMoveCalc(int x, int y, sf::Vector2f& loc);
 
-	void checkPieceType(ChessPiece::PieceType& p, int& points);
+	int checkPieceType(ChessPiece::PieceType& p, int points);
+
+	void calcPoints(ChessPiece*& p, int& calc, int& points, int& move_x, int& move_y,
+		int offset_x, int offset_y);
+
+	void enemyPointsAssign(ChessPiece& current_owned, ChessPiece& rival_owned, int afterpos_x,
+		int afterpos_y, bool& blocked, bool& found_enemy, int& points, ChessPiece::PieceType type);
 };
 
