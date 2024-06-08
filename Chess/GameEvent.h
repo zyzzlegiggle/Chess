@@ -20,7 +20,7 @@ private:
 
 	bool m_promotion{ false };
 	bool m_check{ false };
-	bool m_firsttime{ true }; // for showing the board the first time
+	
 	bool m_checkmate{ false };
 	bool m_stale{ false };
 
@@ -121,7 +121,9 @@ public:
 	void calcPoints(ChessPiece*& p, int& calc, int& points, int& move_x, int& move_y,
 		int offset_x, int offset_y);
 
-	void enemyPointsAssign(ChessPiece& current_owned, ChessPiece& rival_owned, int afterpos_x,
+	void enemyPointsAssign(std::vector<ChessPiece>& current_owned, ChessPiece& rival_owned, int afterpos_x,
 		int afterpos_y, bool& blocked, bool& found_enemy, int& points, ChessPiece::PieceType type);
+
+	void enemyPawnPromotion();
 };
 

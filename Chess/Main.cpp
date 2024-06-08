@@ -32,25 +32,17 @@ int main()
 
 		game.checkSeeker();
 		game.staleCheck();
-		if (game.enemyTurn())
+		
+		
+		if (game.enemyTurn() && !game.isCheckmate())
 		{
 			if (game.oneKing())
 			{
 				game.checkMate();
 			}
-			else if (game.isStale())
-			{
-				// makes m_chosen null, if outside, will stuck at !isChosen()
-				if (!game.findHelper())
-				{
-					game.checkMate();
-					std::cout << "checkmate\n";
-				}
-			}
 			game.enemyMove();
 		}
 		
-
 		while (window.pollEvent(event))
 		{
 
