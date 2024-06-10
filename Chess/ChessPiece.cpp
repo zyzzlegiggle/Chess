@@ -61,7 +61,7 @@ void ChessPiece::updateSprite(ColorType color, PieceType piece)
 	}
 	else
 	{
-		
+		m_texture.setSmooth(true);
 		m_sprite.setTexture(m_texture);
 		m_sprite.scale(0.5f, 0.5f);
 		m_sprite.setOrigin(m_sprite.getLocalBounds().width / 2, m_sprite.getLocalBounds().height / 2);

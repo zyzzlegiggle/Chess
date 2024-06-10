@@ -18,11 +18,18 @@ private:
 	bool m_playerturn{ true };
 	sf::RenderWindow& m_window;
 
+	bool m_gamestart{ false };
+	bool m_singleplayer{ false };
+	std::vector<sf::Sprite> m_gamemodes;
+
 	bool m_promotion{ false };
 	bool m_check{ false };
 	
 	bool m_checkmate{ false };
 	bool m_stale{ false };
+
+	sf::SoundBuffer moving_buffer;
+	sf::Sound moving;
 
 	std::vector<ChessPiece> m_choices; // choices for pawn promotion
 
@@ -125,5 +132,13 @@ public:
 		int afterpos_y, bool& blocked, bool& found_enemy, int& points, ChessPiece::PieceType type);
 
 	void enemyPawnPromotion();
+
+	const bool isStarted();
+
+	void showTitle();
+
+	void chooseModes(int x, int y);
+
+	const bool isSinglePlayer();
 };
 

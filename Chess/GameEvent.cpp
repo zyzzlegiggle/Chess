@@ -6,6 +6,12 @@ GameEvent::GameEvent(Player& player, Board& board, Enemy& enemy, sf::RenderWindo
 	, m_enemy{ enemy }
 	, m_window{ window }
 {
+	if (!moving_buffer.loadFromFile("sound/moving.mp3"))
+	{
+		std::cout << "moving";
+	}
+
+	moving.setBuffer(moving_buffer);
 }
 
 void GameEvent::showBoard()
@@ -156,8 +162,6 @@ void GameEvent::movePiece(int x, int y)
 		return;
 	}
 
-	
-
 	// check if piece can be moved (not eaten yet)
 	if (!m_chosen->isMovable())
 	{
@@ -218,14 +222,6 @@ void GameEvent::movePiece(int x, int y)
 		break;
 	}
 
-	static sf::SoundBuffer buffer;
-	buffer.loadFromFile("sound/moving.mp3");
-
-	static sf::Sound moving;
-	if (moving.getBuffer() == nullptr)
-	{
-		moving.setBuffer(buffer);
-	}
 	
 	// if player do a wrong move (clicking random tiles) 
 	// stay at player turn
@@ -535,7 +531,7 @@ void GameEvent::moveKing(int x, int y, std::vector<ChessPiece>& current_owned,
 					}
 				}
 				else if (x == to_left - 64 && !onWayBlocked(x, y, to_left, y, current_owned, rival_owned) &&
-					!checkSeeker(to_left - 64, y))
+					!checkSeeker(to_left - 64, y) && !checkSeeker(to_left - 128, y))
 				{
 					if (castlingMove(32, loc.y, current_owned, 192))
 					{
@@ -571,7 +567,7 @@ void GameEvent::moveKing(int x, int y, std::vector<ChessPiece>& current_owned,
 					}
 				}
 				else if (x == to_left - 64 && !onWayBlocked(x, y, to_left, y, current_owned, rival_owned) &&
-					!checkSeeker(to_left - 64, y))
+					!checkSeeker(to_left - 64, y) && !checkSeeker(to_left - 128, y))
 				{
 					if (castlingMove(32, loc.y, current_owned, 192))
 					{
@@ -1034,7 +1030,7 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->getPosit
 		{
 
 			// calcPoints use x and y as 0 and other function is using the if condition inside
-			if (x != loc.x && y != loc.y)
+			if (!(x == loc.x && y == loc.y))
 			{
 				// default movement if there is piece blocking
 				if (current_owned[j].returnSprite().getGlobalBounds().contains(0 + x, 0 + y))
@@ -1064,48 +1060,6 @@ bool GameEvent::checkSeeker(int x, int y, sf::Vector2f loc /*=m_chosen->getPosit
 						}
 					}
 					king_check = true;
-					/*
-					if (rival_owned[j].returnSprite().
-						getGlobalBounds().contains(0 + x, -64 + y))
-					{
-						return true;
-					}
-					else if (rival_owned[j].returnSprite().
-						getGlobalBounds().contains(0 + x, 64 + y))
-					{
-						return true;
-					}
-					else if (rival_owned[j].returnSprite().
-						getGlobalBounds().contains(64 + x, 0 + y))
-					{
-						return true;
-					}
-					else if (rival_owned[j].returnSprite().
-						getGlobalBounds().contains(-64 + x, 0 + y))
-					{
-						return true;
-					}
-					else if (rival_owned[j].returnSprite().
-						getGlobalBounds().contains(64 + x, 64 + y))
-					{
-						return true;
-					}
-					else if (rival_owned[j].returnSprite().
-						getGlobalBounds().contains(64 + x, -64 + y))
-					{
-						return true;
-					}
-					else if (rival_owned[j].returnSprite().
-						getGlobalBounds().contains(-64 + x, 64 + y))
-					{
-						return true;
-					}
-					else if (rival_owned[j].returnSprite().
-						getGlobalBounds().contains(-64 + x, -64 + y))
-					{
-						return true;
-					}
-					*/
 				}
 			}
 
@@ -1461,17 +1415,13 @@ void GameEvent::movingAction(int x, int y, bool not_blocked, std::vector<ChessPi
 		else
 		{
 			// put eat_enemy here so it wont be nullptr and stayed in same turn
-			if (!eat_enemy && !eatEnemy(x, y, rival_owned)) 
+			if (!eat_enemy && !eatEnemy(x, y, rival_owned))
 			{
 				m_chosen->returnSprite().move(x, y);
 
-				if (is_king) // king can move so not check
-				{
-					m_check = false;
-				}
-
 				checkSeeker(); // check current king condition
-
+				
+				// revert if movement causes check
 				if (m_check)
 				{
 					m_chosen->returnSprite().move(-x, -y);
@@ -1479,6 +1429,8 @@ void GameEvent::movingAction(int x, int y, bool not_blocked, std::vector<ChessPi
 					m_chosen = nullptr;
 				}
 			}
+			
+			checkSeeker(); // in case king successfully eat while forced
 		}
 	}
 	else
@@ -1890,6 +1842,7 @@ void GameEvent::checkMate()
 		sound.setBuffer(buffer);
 	}
 	
+	sound.setVolume(80);
 	sound.play();
 
 	// because it will always change turn after movement, reverse the condition
@@ -1946,7 +1899,7 @@ void GameEvent::showCheckmate()
 	{
 		std::cout << "failed load checkmate";
 	}
-
+	t.setSmooth(true);
 	s.setTexture(t);
 
 	s.setPosition(-85, 215);
@@ -1972,22 +1925,32 @@ void GameEvent::enemyMove()
 {
 	sf::sleep(sf::seconds(1));
 
+	int points{};
+	int calc{};
+	ChessPiece* p = nullptr;
+
+	// store the x and y of largest point of chesspiece to be moved later
+	int move_x{}, move_y{};
+
+	std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
+
+	std::vector<bool> valid_moves(16, true);
+
 	while (!m_playerturn)
 	{
-		int points{};
-		int calc{};
-		ChessPiece* p = nullptr;
-		
-		// store the x and y of largest point of chesspiece to be moved later
-		int move_x{}, move_y{};
-
-		std::vector<ChessPiece>& current_owned{ (m_playerturn) ? player_owned : enemy_owned };
-		for (std::size_t i{0}; i < 16; i++)
+		std::size_t index{};
+		for (; index < valid_moves.size(); index++)
 		{
-			m_chosen = &current_owned[i];
+			if (!valid_moves[index])
+			{
+				continue;
+			}
+
+			m_chosen = &current_owned[index];
 
 			if (!m_chosen->isMovable())
 			{
+				valid_moves[index] = false;
 				continue;
 			}
 
@@ -2054,12 +2017,12 @@ void GameEvent::enemyMove()
 
 				std::vector<bool> valid_moves(8, true);
 
-				for (std::size_t i{ 0 }; i < valid_moves.size(); i++)
+				for (std::size_t j{ 0 }; j < valid_moves.size(); j++)
 				{
-					if (valid_moves[i])
+					if (valid_moves[j])
 					{
-						int off_x{ knight_moves[i].first };
-						int off_y{ knight_moves[i].second };
+						int off_x{ knight_moves[j].first };
+						int off_y{ knight_moves[j].second };
 
 						if (outOfBoundaries(off_x, off_y, loc))
 						{
@@ -2068,9 +2031,9 @@ void GameEvent::enemyMove()
 
 						calc = enemyMoveCalc(off_x, off_y, loc);
 						// make false if that direction is blocked
-						valid_moves[i] = (calc != -1);
+						valid_moves[j] = (calc != -1);
 
-						if (valid_moves[i])
+						if (valid_moves[j])
 						{
 							calcPoints(p, calc, points, move_x, move_y, off_x, off_y);
 							// brute force move if check (put after calcPoints)
@@ -2097,22 +2060,22 @@ void GameEvent::enemyMove()
 				// put this bishop direction outside to not get reinitialized in loop
 				std::vector<bool> valid_moves(4, true);
 
-				for (int i{ 0 }; i < 480; i += 64)
+				for (int j{ 0 }; j < 480; j += 64)
 				{
-					int to_down{ 64 + i };
-					int to_up{ -64 - i };
-					int to_right{ 64 + i };
-					int to_left{ -64 - i };
+					int to_down{ 64 + j };
+					int to_up{ -64 - j };
+					int to_right{ 64 + j };
+					int to_left{ -64 - j };
 					std::vector<std::pair<int, int>> moves = {
 					{to_right, to_up}, {to_left, to_up}, {to_right, to_down}, {to_left, to_down}
 					};
 
-					for (std::size_t i{ 0 }; i < valid_moves.size(); i++)
+					for (std::size_t k{ 0 }; k < valid_moves.size(); k++)
 					{
-						if (valid_moves[i])
+						if (valid_moves[k])
 						{
-							int off_x{ moves[i].first };
-							int off_y{ moves[i].second };
+							int off_x{ moves[k].first };
+							int off_y{ moves[k].second };
 
 							if (outOfBoundaries(off_x, off_y, loc))
 							{
@@ -2121,13 +2084,13 @@ void GameEvent::enemyMove()
 
 							calc = enemyMoveCalc(off_x, off_y, loc);
 							// make false if that direction is blocked
-							valid_moves[i] = (calc != -1);
-							if (valid_moves[i])
+							valid_moves[k] = (calc != -1);
+							if (valid_moves[k])
 							{
 								// if enemy is found, dont further check that direction
 								if (calc > 0)
 								{
-									valid_moves[i] = false;
+									valid_moves[k] = false;
 								}
 								calcPoints(p, calc, points, move_x, move_y, off_x, off_y);
 								// brute force move if check (put after calcPoints)
@@ -2155,12 +2118,12 @@ void GameEvent::enemyMove()
 				// put this queen direction outside to not get reinitialized in loop
 				std::vector<bool> valid_moves(8, true);
 
-				for (int i{ 0 }; i < 480; i += 64)
+				for (int j{ 0 }; j < 480; j += 64)
 				{
-					int to_down{ 64 + i };
-					int to_up{ -64 - i };
-					int to_right{ 64 + i };
-					int to_left{ -64 - i };
+					int to_down{ 64 + j };
+					int to_up{ -64 - j };
+					int to_right{ 64 + j };
+					int to_left{ -64 - j };
 
 					std::vector<std::pair<int, int>> moves = {
 					{to_right, to_up}, {to_left, to_up}, {to_right, to_down}, {to_left, to_down},
@@ -2169,12 +2132,12 @@ void GameEvent::enemyMove()
 
 					
 
-					for (std::size_t i{ 0 }; i < valid_moves.size(); i++)
+					for (std::size_t k{ 0 }; k < valid_moves.size(); k++)
 					{
-						if (valid_moves[i])
+						if (valid_moves[k])
 						{
-							int off_x{ moves[i].first };
-							int off_y{ moves[i].second };
+							int off_x{ moves[k].first };
+							int off_y{ moves[k].second };
 
 							if (outOfBoundaries(off_x, off_y, loc))
 							{
@@ -2183,14 +2146,17 @@ void GameEvent::enemyMove()
 
 							calc = enemyMoveCalc(off_x, off_y, loc);
 							// make false if that direction is blocked
-							valid_moves[i] = (calc != -1);
-							if (valid_moves[i])
+							valid_moves[k] = (calc != -1);
+							if (valid_moves[k])
 							{
 								// if enemy is found, dont further check that direction
 								if (calc > 0)
 								{
-									valid_moves[i] = false;
+									valid_moves[k] = false;
 								}
+
+								// discourage moving queen
+								calc--;
 
 								calcPoints(p, calc, points, move_x, move_y, off_x, off_y);
 								// brute force move if check (put after calcPoints)
@@ -2218,23 +2184,23 @@ void GameEvent::enemyMove()
 				// vector for rook direction (put it outside to not get reinitialized
 				std::vector<bool> valid_moves(4, true);
 
-				for (int i{ 0 }; i < 480; i += 64)
+				for (int j{ 0 }; j < 480; j += 64)
 				{
-					int to_down{ 64 + i };
-					int to_up{ -64 - i };
-					int to_right{ 64 + i };
-					int to_left{ -64 - i };
+					int to_down{ 64 + j };
+					int to_up{ -64 - j };
+					int to_right{ 64 + j };
+					int to_left{ -64 - j };
 
 					std::vector<std::pair<int, int>> moves = {
 					{0, to_up}, {0, to_down}, {to_left, 0}, {to_right, 0}
 					};
 
-					for (std::size_t i{ 0 }; i < valid_moves.size(); i++)
+					for (std::size_t k{ 0 }; k < valid_moves.size(); k++)
 					{
-						if (valid_moves[i])
+						if (valid_moves[k])
 						{
-							int off_x{ moves[i].first };
-							int off_y{ moves[i].second };
+							int off_x{ moves[k].first };
+							int off_y{ moves[k].second };
 
 							if (outOfBoundaries(off_x, off_y, loc))
 							{
@@ -2244,14 +2210,14 @@ void GameEvent::enemyMove()
 							calc = enemyMoveCalc(off_x, off_y, loc);
 							
 							// make false if that direction is blocked
-							valid_moves[i] = (calc != -1);
+							valid_moves[k] = (calc != -1);
 
-							if (valid_moves[i])
+							if (valid_moves[k])
 							{
 								// if enemy is found, dont further check that direction
 								if (calc > 0)
 								{
-									valid_moves[i] = false;
+									valid_moves[k] = false;
 								}
 
 								calcPoints(p, calc, points, move_x, move_y, off_x, off_y);
@@ -2283,14 +2249,14 @@ void GameEvent::enemyMove()
 				};
 
 				sf::Vector2f kingloc{ m_chosen->getPosition() };
-				std::vector<bool> valid_moves(8, true);
+				std::vector<bool> valid_moves(10, true);
 
-				for (std::size_t i{ 0 }; i < valid_moves.size(); i++)
+				for (std::size_t j{ 0 }; j < valid_moves.size(); j++)
 				{
-					if (valid_moves[i])
+					if (valid_moves[j])
 					{
-						int off_x{ king_moves[i].first };
-						int off_y{ king_moves[i].second };
+						int off_x{ king_moves[j].first };
+						int off_y{ king_moves[j].second };
 
 						if (outOfBoundaries(off_x, off_y, loc))
 						{
@@ -2299,21 +2265,24 @@ void GameEvent::enemyMove()
 
 						calc = enemyMoveCalc(off_x, off_y, loc);
 						// make false if that direction is blocked
-						valid_moves[i] = (calc != -1);
+						valid_moves[j] = (calc != -1);
 
-						if (valid_moves[i])
+						if (valid_moves[j])
 						{
 							if (kingloc.x == 288 && kingloc.y == 32)
 							{
 								// prioritize castling
 								if (off_x == 128 || off_x == -128)
 								{
-									calc += 3;
+									calc++;
 								}
 							}
 							else
 							{
-								calc--;
+								if (off_x == 128 || off_x == -128)
+								{
+									calc = -1;
+								}
 							}
 							calcPoints(p, calc, points, move_x, move_y, off_x, off_y);
 							// brute force move if check (put after calcPoints)
@@ -2347,6 +2316,20 @@ void GameEvent::enemyMove()
 			if (pawnPromotion())
 			{
 				enemyPawnPromotion();
+			}
+			// still in the same turn then it movement failed
+			// then block that piece from moving
+			else if (!m_playerturn)
+			{
+				// find the index again
+				for (std::size_t i{ 0 }; i < valid_moves.size(); i++)
+				{
+					if (current_owned[i].getPosition() == p->getPosition())
+					{
+						index = i;
+					}
+				}
+				valid_moves[index] = false;
 			}
 		}
 		else
@@ -2410,57 +2393,83 @@ int GameEvent::enemyMoveCalc(int x, int y, sf::Vector2f& loc)
 		{
 		case ChessPiece::PieceType::PAWN:
 		{
-			if (x != 0)
+			
+			for (std::size_t k{ 0 }; k < current_owned.size(); k++)
 			{
-				// to the chosen tile (no extra offset for checking)
-				if (rival_owned[j].returnSprite().getGlobalBounds().contains(afterpos_x, afterpos_y))
+				if (!current_owned[k].isMovable())
 				{
-					points = checkPieceType(type, points);
-					points += 2;
-				}
-				else if (current_owned[j].returnSprite().getGlobalBounds().contains(afterpos_x, afterpos_y))
-				{
-					not_blocked = false;
-					break;
-				}
-			}
-			else
-			{
-				if (current_owned[j].returnSprite().getGlobalBounds().contains(afterpos_x, afterpos_y))
-				{
-					not_blocked = false;
-					break;
-				}
-				else if (rival_owned[j].returnSprite().getGlobalBounds().contains(afterpos_x, afterpos_y))
-				{
-					not_blocked = false;
-					break;
+					continue;
 				}
 
-				if (rival_owned[j].returnSprite().getGlobalBounds().
-					contains(64 + afterpos_x, 64 + afterpos_y))
+				if (x != 0)
 				{
-					points = checkPieceType(type, points);
+					// to the chosen tile (no extra offset for checking)
+					if (rival_owned[j].returnSprite().getGlobalBounds().contains(afterpos_x, afterpos_y))
+					{
+						points = checkPieceType(type, points);
+						points += 2;
+					}
+					else if (current_owned[k].returnSprite().getGlobalBounds().contains(afterpos_x, afterpos_y))
+					{
+						not_blocked = false;
+						break;
+					}
 				}
-				else if (rival_owned[j].returnSprite().getGlobalBounds().
-					contains(-64 + afterpos_x, 64 + afterpos_y))
+				else
 				{
-					points = checkPieceType(type, points);
-				}
+					// double tile check
+					if (y == 128)
+					{
+						if (rival_owned[j].returnSprite().getGlobalBounds().contains(afterpos_x, afterpos_y - 64))
+						{
+							not_blocked = false;
+							break;
+						}
+						else if (current_owned[k].returnSprite().getGlobalBounds().contains(afterpos_x, afterpos_y - 64) &&
+							current_owned[k].getPosition() != m_chosen->getPosition())
+						{
+							not_blocked = false;
+							break;
+						}
+					}
 
-				// help team piece on the way
-				if (current_owned[j].returnSprite().getGlobalBounds().
-					contains(-64 + afterpos_x, 64 + afterpos_y))
-				{
-					helperpoints += 1;
-				}
-				// help team piece on the way
-				else if (current_owned[j].returnSprite().getGlobalBounds().
-					contains(64 + afterpos_x, 64 + afterpos_y))
-				{
-					helperpoints += 1;
+					if (current_owned[k].returnSprite().getGlobalBounds().contains(afterpos_x, afterpos_y))
+					{
+						not_blocked = false;
+						break;
+					}
+					else if (rival_owned[j].returnSprite().getGlobalBounds().contains(afterpos_x, afterpos_y))
+					{
+						not_blocked = false;
+						break;
+					}
+
+					if (rival_owned[j].returnSprite().getGlobalBounds().
+						contains(64 + afterpos_x, 64 + afterpos_y))
+					{
+						points = checkPieceType(type, points);
+					}
+					else if (rival_owned[j].returnSprite().getGlobalBounds().
+						contains(-64 + afterpos_x, 64 + afterpos_y))
+					{
+						points = checkPieceType(type, points);
+					}
+
+					// help team piece on the way
+					if (current_owned[k].returnSprite().getGlobalBounds().
+						contains(-64 + afterpos_x, 64 + afterpos_y))
+					{
+						helperpoints += 1;
+					}
+					// help team piece on the way
+					else if (current_owned[k].returnSprite().getGlobalBounds().
+						contains(64 + afterpos_x, 64 + afterpos_y))
+					{
+						helperpoints += 1;
+					}
 				}
 			}
+			
 
 			break;
 		}
@@ -2513,7 +2522,7 @@ int GameEvent::enemyMoveCalc(int x, int y, sf::Vector2f& loc)
 
 int GameEvent::checkPieceType(ChessPiece::PieceType& p, int points)
 {
-	static enum class EnemyRank
+	enum class EnemyRank
 	{
 		PAWN = 2,
 		BISHOP = 5,
@@ -2561,7 +2570,7 @@ int GameEvent::checkPieceType(ChessPiece::PieceType& p, int points)
 void GameEvent::calcPoints(ChessPiece*& p, int& calc, int& points, int& move_x, int& move_y,
 	int offset_x, int offset_y)
 {
-
+	ChessPiece::PieceType chosentype{ m_chosen->returnPieceType() };
 	// if check accept any piece
 	if (m_check)
 	{
@@ -2577,10 +2586,10 @@ void GameEvent::calcPoints(ChessPiece*& p, int& calc, int& points, int& move_x, 
 			calc++;
 		}
 	}
-	else if (offset_y > 0 && m_chosen->returnPieceType() !=
+	else if (offset_y > 0 && chosentype !=
 		ChessPiece::PieceType::KING)
 	{
-		if (!(offset_y == 128 && m_chosen->returnPieceType() !=
+		if (!(offset_y == 128 && chosentype !=
 			ChessPiece::PieceType::PAWN))
 		{
 			calc++;
@@ -2588,19 +2597,20 @@ void GameEvent::calcPoints(ChessPiece*& p, int& calc, int& points, int& move_x, 
 	}
 
 	// if currently in dangerous position, prioritize moving this piece
-	if (checkSeeker(0, 0) && m_chosen->returnPieceType() !=
+	if (checkSeeker(0, 0) && chosentype !=
 		ChessPiece::PieceType::PAWN)
 	{
-		calc += 2 + checkPieceType(m_chosen->returnPieceType(), 0);
+		
+		calc += checkPieceType(chosentype, 0);
 	}
 
 	// if going to dangerous position reduce probability being moved
 	// except pawn
-	if (checkSeeker(offset_x, offset_y) && m_chosen->returnPieceType() != 
+	if (checkSeeker(offset_x, offset_y) && chosentype != 
 		ChessPiece::PieceType::PAWN)
 	{
 		// preventing kamikaze
-		if (m_chosen->returnPieceType() != ChessPiece::PieceType::PAWN)
+		if (chosentype != ChessPiece::PieceType::PAWN)
 		{
 			calc -= 1;
 		}
@@ -2621,7 +2631,7 @@ void GameEvent::calcPoints(ChessPiece*& p, int& calc, int& points, int& move_x, 
 		else
 		{
 			int random{ Random::get(1,10) };
-			if (random <= 4)
+			if (random % 2 == 0)
 			{
 				p = m_chosen;
 				move_x = offset_x, move_y = offset_y;
@@ -2630,33 +2640,6 @@ void GameEvent::calcPoints(ChessPiece*& p, int& calc, int& points, int& move_x, 
 			{
 				p = p;
 			}
-			// ye olde fun stuffe
-			/*
-			// compare two pieces value, choose the lowest one
-			int p1_value{ checkPieceType(m_chosen->returnPieceType(), points) };
-			int p2_value{ checkPieceType(p->returnPieceType(), points) };
-
-			if (p1_value == p2_value)
-			{
-				int random{ Random::get(0,1) };
-				if (random == 0)
-				{
-					p = m_chosen;
-					move_x = offset_x, move_y = offset_y;
-				}
-			}
-
-			// m_chosen is lower, so assign it to p to be moved later
-			else if (p1_value < p2_value)
-			{
-				p = m_chosen;
-				move_x = offset_x, move_y = offset_y;
-			}
-			// if m_chosen is larger, just stay at p
-			else {
-				p = p;
-			}
-			*/
 		}
 
 		points = calc;
@@ -2694,11 +2677,20 @@ void GameEvent::enemyPointsAssign(std::vector<ChessPiece>& current_owned, ChessP
 	{
 		if (rival_owned.returnSprite().getGlobalBounds().contains(afterpos_x, afterpos_y))
 		{
+			// prevent castling move to enemy
+			if (m_chosen->returnPieceType() == ChessPiece::PieceType::KING)
+			{
+				sf::Vector2f loc{ m_chosen->getPosition() };
+				if (afterpos_x - 128 == loc.x || afterpos_x + 128 == loc.x)
+				{
+					points = -100;
+				}
+			}
 			int chosen_value = checkPieceType(m_chosen->returnPieceType(), 0);
 			points = checkPieceType(type, points);
 			if (chosen_value > points)
 			{
-				points = 0;
+				points--;
 			}
 			points += 1;
 		}
@@ -2735,4 +2727,99 @@ void GameEvent::enemyPawnPromotion()
 	m_playerturn = !m_playerturn;
 	m_chosen = nullptr;
 	m_promotion = false;
+}
+
+const bool GameEvent::isStarted()
+{
+	return m_gamestart;
+}
+
+void GameEvent::showTitle()
+{
+	sf::Texture t;
+	sf::Texture g1;
+	sf::Texture g2;
+	sf::Texture back;
+	if (!t.loadFromFile("chessimages/title.png"))
+	{
+		std::cout << "showTitle";
+	}
+	if (!g1.loadFromFile("chessimages/singleplayer.png"))
+	{
+		std::cout << "showTitle";
+	}
+	if (!g2.loadFromFile("chessimages/multiplayer.png"))
+	{
+		std::cout << "showTitle";
+	}
+	if (!back.loadFromFile("chessimages/menu.png"))
+	{
+		std::cout << "menu";
+	}
+
+	sf::Sprite title;
+	sf::Sprite single;
+	sf::Sprite multi;
+	sf::Sprite background;
+
+	t.setSmooth(true);
+	g1.setSmooth(true);
+	g2.setSmooth(true);
+	back.setSmooth(true);
+
+	title.setTexture(t);
+	single.setTexture(g1);
+	multi.setTexture(g2);
+	background.setTexture(back);
+
+	title.setPosition(130, 120);
+	single.setPosition(95, 200);
+	single.scale(0.7, 0.7);
+	multi.scale(0.7, 0.7);
+	multi.setPosition(95, 300);
+	background.scale(0.9, 0.9);
+	background.setPosition(45, 50);
+
+	m_gamemodes = { single, multi };
+	m_window.draw(background);
+	m_window.draw(title);
+	m_window.draw(single);
+	m_window.draw(multi);
+}
+
+void GameEvent::chooseModes(int x, int y)
+{
+	enum GameModes
+	{
+		SINGLE,
+		MULTI,
+		MAX_MODES
+	};
+
+	GameModes mode{ GameModes::MAX_MODES };
+	
+	for (std::size_t i{ 0 }; i < m_gamemodes.size(); i++)
+	{
+		if (m_gamemodes[i].getGlobalBounds().contains(x, y))
+		{
+			mode = static_cast<GameModes>(i);
+			break;
+		}
+	}
+
+	if (mode == GameModes::SINGLE)
+	{
+		m_singleplayer = true;
+		m_gamestart = true;
+	}
+	else if (mode == GameModes::MULTI)
+	{
+		m_singleplayer = false;
+		m_gamestart = true;
+	}
+}
+
+const bool GameEvent::isSinglePlayer()
+{
+	return m_singleplayer;
 }

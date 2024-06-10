@@ -13,7 +13,7 @@ int main()
 	unsigned int screen_height{ 512 };
 
 
-	sf::RenderWindow window(sf::VideoMode(screen_width, screen_height), "Chess", sf::Style::Close);
+	sf::RenderWindow window(sf::VideoMode(screen_width, screen_height), "Chess by zyzzlegiggle", sf::Style::Close);
 
 	// Limit the framerate to 30 frames per second
 	window.setFramerateLimit(30);
@@ -29,18 +29,25 @@ int main()
 	{
 		// check all the window's events that were triggered since the last iteration of the loop
 		sf::Event event;
-
+		sf::Event game_event;
+		
 		game.checkSeeker();
 		game.staleCheck();
 		
-		
-		if (game.enemyTurn() && !game.isCheckmate())
+
+		if (game.isStarted() && game.isSinglePlayer())
 		{
-			if (game.oneKing())
+			if (game.enemyTurn() && !game.isCheckmate())
 			{
-				game.checkMate();
+				if (game.oneKing())
+				{
+					game.checkMate();
+				}
+				else
+				{
+					game.enemyMove();
+				}
 			}
-			game.enemyMove();
 		}
 		
 		while (window.pollEvent(event))
@@ -54,38 +61,50 @@ int main()
 					std::cout << "the right button was pressed" << std::endl;
 					std::cout << "mouse x: " << event.mouseButton.x << std::endl;
 					std::cout << "mouse y: " << event.mouseButton.y << std::endl;
-
-					if (!game.isCheckmate())
+					
+					if (!game.isStarted())
 					{
-						if (game.pawnPromotion())
+						game.chooseModes(event.mouseButton.x, event.mouseButton.y);
+					}
+					else
+					{
+						if (!game.isCheckmate())
 						{
-							game.choosePromotion(event.mouseButton.x, event.mouseButton.y);
-						}
-						// main game 
-						else if (game.isChosen())
-						{
-							game.movePiece(event.mouseButton.x, event.mouseButton.y);
+							if (game.pawnPromotion())
+							{
+								game.choosePromotion(event.mouseButton.x, event.mouseButton.y);
+							}
+							// main game 
+							else if (game.isChosen())
+							{
+								game.movePiece(event.mouseButton.x, event.mouseButton.y);
 
+							}
+							else
+							{
+								if (game.oneKing())
+								{
+									game.checkMate();
+								}
+								else if (game.isStale())
+								{
+									// makes m_chosen null, if outside, will stuck at !isChosen()
+									if (!game.findHelper())
+									{
+										game.checkMate();
+										std::cout << "checkmate\n";
+									}
+								}
+
+								game.choosePiece(event.mouseButton.x, event.mouseButton.y);
+							}
 						}
 						else
 						{
-							if (game.oneKing())
-							{
-								game.checkMate();
-							}
-							else if (game.isStale())
-							{
-								// makes m_chosen null, if outside, will stuck at !isChosen()
-								if (!game.findHelper())
-								{
-									game.checkMate();
-									std::cout << "checkmate\n";
-								}
-							}
-
-							game.choosePiece(event.mouseButton.x, event.mouseButton.y);
+							break;
 						}
 					}
+					
 				}
 			}
 
@@ -101,20 +120,27 @@ int main()
 
 		game.showBoard();
 
-		game.showPieces();
-		
-		if (game.pawnPromotion())
+
+
+		if (!game.isStarted())
 		{
- 			game.promotionCheck();
+			game.showTitle();
 		}
-
-		if (game.isCheckmate())
+		else
 		{
-			game.showCheckmate();
+			
+			game.showPieces();
+
+			if (game.pawnPromotion())
+			{
+				game.promotionCheck();
+			}
+
+			if (game.isCheckmate())
+			{
+				game.showCheckmate();
+			}
 		}
-
-		
-
 		window.display();
 	}
 }
