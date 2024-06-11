@@ -6,7 +6,7 @@
 #include <iostream>
 
 
-int main()
+int WinMain()
 {
 
 	unsigned int screen_width{ 512 };
@@ -14,6 +14,12 @@ int main()
 
 
 	sf::RenderWindow window(sf::VideoMode(screen_width, screen_height), "Chess by zyzzlegiggle", sf::Style::Close);
+
+	sf::Image icon;
+	icon.loadFromFile("chessimages/b_knight_png_shadow_128px.png");
+
+	// set icon
+	window.setIcon(128, 128, icon.getPixelsPtr());
 
 	// Limit the framerate to 30 frames per second
 	window.setFramerateLimit(30);
@@ -29,7 +35,6 @@ int main()
 	{
 		// check all the window's events that were triggered since the last iteration of the loop
 		sf::Event event;
-		sf::Event game_event;
 		
 		game.checkSeeker();
 		game.staleCheck();
