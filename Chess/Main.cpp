@@ -38,8 +38,8 @@ int WinMain()
 		
 		game.checkSeeker();
 		game.staleCheck();
+		//test
 		
-
 		if (game.isStarted() && game.isSinglePlayer())
 		{
 			if (game.enemyTurn() && !game.isCheckmate())
