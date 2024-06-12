@@ -1,5 +1,4 @@
 # Chess
-## Description
 Classic chess game made with SFML. Can be played againts computer or vs locally.
 
 ## Assets used
